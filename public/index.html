@@ -1,0 +1,1466 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="足球冠军教练——支持好友房间码的实时足球阵容推演游戏">
+  <title>足球冠军教练</title>
+  <link rel="stylesheet" href="/base.css">
+  <script src="/online.js"></script>
+</head>
+<body>
+<div id="football-champion-manager">
+  <style>
+    #football-champion-manager {
+      color: var(--foreground);
+      font-family: inherit;
+      max-width: 1920px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 8px 14px 16px;
+    }
+    #football-champion-manager * { box-sizing: border-box; }
+    #football-champion-manager button,
+    #football-champion-manager select,
+    #football-champion-manager input { font: inherit; }
+    #football-champion-manager .game-topbar,
+    #football-champion-manager .brand,
+    #football-champion-manager .stepper,
+    #football-champion-manager .room-strip,
+    #football-champion-manager .section-head,
+    #football-champion-manager .tile-top,
+    #football-champion-manager .tile-foot,
+    #football-champion-manager .turn-banner,
+    #football-champion-manager .scoreboard,
+    #football-champion-manager .clock-box,
+    #football-champion-manager .match-actions,
+    #football-champion-manager .bench-row,
+    #football-champion-manager .event-head,
+    #football-champion-manager .result-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #football-champion-manager .game-topbar {
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding: 2px 0 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    #football-champion-manager .brand-mark {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--primary);
+      color: var(--primary-foreground);
+    }
+    #football-champion-manager .brand-copy h2,
+    #football-champion-manager .brand-copy p,
+    #football-champion-manager .screen-title h3,
+    #football-champion-manager .screen-title p,
+    #football-champion-manager .event-item p,
+    #football-champion-manager .event-item strong,
+    #football-champion-manager .reason-box p,
+    #football-champion-manager .reason-box strong { margin: 0; }
+    #football-champion-manager .brand-copy p,
+    #football-champion-manager .screen-title p { color: var(--muted-foreground); }
+    #football-champion-manager .stepper { flex-wrap: wrap; }
+    #football-champion-manager .step {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted-foreground);
+    }
+    #football-champion-manager .step-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+    }
+    #football-champion-manager .step.is-active { color: var(--foreground); }
+    #football-champion-manager .step.is-active .step-dot,
+    #football-champion-manager .step.is-done .step-dot {
+      color: var(--primary-foreground);
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+    #football-champion-manager .screen { display: none; }
+    #football-champion-manager .screen.is-active { display: block; min-height: 900px; }
+    #football-champion-manager .screen-title { margin: 2px 0 10px; }
+    #football-champion-manager .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
+      gap: 18px;
+      align-items: stretch;
+      min-height: 790px;
+    }
+    #football-champion-manager .hero-main {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 30px;
+      background:
+        radial-gradient(circle at 82% 20%, color-mix(in srgb, var(--viz-series-2) 22%, transparent), transparent 34%),
+        linear-gradient(135deg, color-mix(in srgb, var(--primary) 10%, var(--card)), var(--card));
+    }
+    #football-champion-manager .eyebrow {
+      color: var(--muted-foreground);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    #football-champion-manager .hero h1 { margin: 8px 0 10px; }
+    #football-champion-manager .hero-lead { max-width: 620px; color: var(--muted-foreground); }
+    #football-champion-manager .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+    #football-champion-manager .lobby-side { display: grid; gap: 14px; }
+    #football-champion-manager .lobby-side .card { padding: 18px; }
+    #football-champion-manager .join-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 10px; }
+    #football-champion-manager .feature-list { display: grid; gap: 12px; margin-top: 12px; }
+    #football-champion-manager .feature-item { display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: start; }
+    #football-champion-manager .feature-icon { color: var(--foreground); padding-top: 2px; }
+    #football-champion-manager .room-strip {
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin: 12px 0 16px;
+      padding: 10px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    #football-champion-manager .room-code { letter-spacing: .12em; }
+    #football-champion-manager .draft-layout {
+      display: grid;
+      grid-template-columns: 250px minmax(820px, 1fr) 250px;
+      gap: 12px;
+      align-items: start;
+    }
+    #football-champion-manager .draft-team-column.card {
+      padding: 12px;
+      position: sticky;
+      top: 8px;
+    }
+    #football-champion-manager .draft-team-column.is-picking {
+      box-shadow: inset 0 3px 0 var(--viz-series-1);
+    }
+    #football-champion-manager .draft-team-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    #football-champion-manager .draft-team-hint {
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    #football-champion-manager .draft-center { min-width: 0; }
+    #football-champion-manager .draft-scout.card { padding: 10px 12px; margin-bottom: 8px; }
+    #football-champion-manager .draft-scout .attribute-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    #football-champion-manager .draft-center > [data-action="to-tactics"] { margin-top: 12px; }
+    #football-champion-manager .turn-banner {
+      justify-content: space-between;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      border-left: 3px solid var(--viz-series-1);
+      background: color-mix(in srgb, var(--viz-series-1) 9%, transparent);
+    }
+    #football-champion-manager .pool-tools { margin-bottom: 8px; justify-content: space-between; }
+    #football-champion-manager .position-tabs { display: grid; grid-template-columns: repeat(4, minmax(86px, 1fr)); gap: 6px; flex: 1; }
+    #football-champion-manager .position-tabs .btn { justify-content: center; }
+    #football-champion-manager .pool-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      min-height: 198px;
+      align-content: start;
+    }
+    #football-champion-manager .pool-pagination { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; }
+    #football-champion-manager .player-tile {
+      display: block;
+      width: 100%;
+      min-height: 88px;
+      text-align: left;
+      padding: 10px;
+    }
+    #football-champion-manager .player-tile[disabled] { opacity: .34; }
+    #football-champion-manager .ovr {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      background: var(--primary);
+      color: var(--primary-foreground);
+    }
+    #football-champion-manager .tile-name { margin: 8px 0 3px; }
+    #football-champion-manager .tile-position,
+    #football-champion-manager .tile-foot { color: var(--muted-foreground); }
+    #football-champion-manager .tile-foot { justify-content: space-between; margin-top: 8px; }
+    #football-champion-manager .draft-sidebar { display: grid; gap: 12px; }
+    #football-champion-manager .draft-sidebar .card { padding: 14px; }
+    #football-champion-manager .attribute-list { display: grid; gap: 7px; margin: 12px 0; }
+    #football-champion-manager .attr-row { display: grid; grid-template-columns: 38px 1fr 28px; gap: 7px; align-items: center; }
+    #football-champion-manager .bar {
+      height: 6px;
+      background: var(--muted);
+      overflow: hidden;
+      border-radius: 999px;
+    }
+    #football-champion-manager .bar > span { display: block; height: 100%; background: var(--viz-series-1); }
+    #football-champion-manager .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    #football-champion-manager .roster-mini { display: grid; gap: 5px; margin-top: 8px; }
+    #football-champion-manager .roster-line { display: grid; grid-template-columns: 21px minmax(0, 1fr) auto; gap: 5px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border); }
+    #football-champion-manager .roster-line:last-child { border-bottom: 0; }
+    #football-champion-manager .roster-line .roster-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #football-champion-manager .roster-line .pick-no { color: var(--muted-foreground); }
+    #football-champion-manager .team-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    #football-champion-manager .tactics-layout {
+      display: grid;
+      grid-template-columns: 330px minmax(760px, 1fr) 370px;
+      gap: 12px;
+      align-items: start;
+    }
+    #football-champion-manager .tactics-panel.card { padding: 14px; }
+    #football-champion-manager .squad-list { display: grid; gap: 3px; margin-top: 8px; }
+    #football-champion-manager .squad-player {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 7px;
+      text-align: left;
+      cursor: grab;
+      padding-block: 5px;
+    }
+    #football-champion-manager .squad-player:active { cursor: grabbing; }
+    #football-champion-manager .squad-player-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #football-champion-manager .squad-overall { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--primary); color: var(--primary-foreground); }
+    #football-champion-manager .squad-state { color: var(--muted-foreground); }
+    #football-champion-manager .control-stack { display: grid; gap: 12px; }
+    #football-champion-manager .tradeoff {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    #football-champion-manager .tradeoff:last-child { border-bottom: 0; }
+    #football-champion-manager .tradeoff-gain { color: var(--foreground); }
+    #football-champion-manager .tradeoff-cost { color: var(--destructive); }
+    #football-champion-manager .tactic-pitch,
+    #football-champion-manager .match-pitch {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 105 / 68;
+      min-height: 560px;
+      background: color-mix(in srgb, var(--viz-series-2) 34%, var(--background));
+      border: 1px solid color-mix(in srgb, var(--foreground) 35%, transparent);
+      border-radius: 10px;
+    }
+    #football-champion-manager .tactic-pitch::before,
+    #football-champion-manager .match-pitch::before {
+      content: "";
+      position: absolute;
+      inset: 4%;
+      border: 1px solid color-mix(in srgb, var(--foreground) 38%, transparent);
+      background:
+        linear-gradient(to right, transparent calc(50% - .5px), color-mix(in srgb, var(--foreground) 32%, transparent) 50%, transparent calc(50% + .5px)),
+        radial-gradient(circle at 50% 50%, transparent 10%, color-mix(in srgb, var(--foreground) 34%, transparent) 10.3%, transparent 10.6%);
+      pointer-events: none;
+    }
+    #football-champion-manager .tactic-pitch::after,
+    #football-champion-manager .match-pitch::after {
+      content: "";
+      position: absolute;
+      left: 4%;
+      right: 4%;
+      top: 30%;
+      bottom: 30%;
+      border-left: 1px solid color-mix(in srgb, var(--foreground) 34%, transparent);
+      border-right: 1px solid color-mix(in srgb, var(--foreground) 34%, transparent);
+      pointer-events: none;
+    }
+    #football-champion-manager .formation-player {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: 150px;
+      text-align: center;
+      z-index: 2;
+      cursor: copy;
+    }
+    #football-champion-manager .player-disc,
+    #football-champion-manager .match-disc {
+      display: grid;
+      place-items: center;
+      margin: 0 auto 3px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: var(--primary-foreground);
+      border: 2px solid color-mix(in srgb, var(--primary-foreground) 70%, transparent);
+    }
+    #football-champion-manager .player-disc { width: 34px; height: 34px; }
+    #football-champion-manager .player-label {
+      display: block;
+      color: var(--foreground);
+      background: color-mix(in srgb, var(--background) 82%, transparent);
+      border-radius: 4px;
+      padding: 1px 4px;
+      white-space: normal;
+      overflow: visible;
+      line-height: 1.15;
+    }
+    #football-champion-manager .player-role { display: block; color: var(--muted-foreground); }
+    #football-champion-manager .formation-player.is-empty .player-disc { background: var(--muted); color: var(--muted-foreground); border-color: var(--border); }
+    #football-champion-manager .formation-player.is-empty .player-label { color: var(--muted-foreground); }
+    #football-champion-manager .bench-area { margin-top: 10px; }
+    #football-champion-manager .bench-row { flex-wrap: wrap; margin-top: 6px; }
+    #football-champion-manager .bench-player { display: inline-flex; align-items: center; gap: 5px; }
+    #football-champion-manager .compatibility { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 8px 0; }
+    #football-champion-manager .match-dashboard {
+      display: grid;
+      grid-template-columns: 330px minmax(760px, 1fr) 410px;
+      gap: 12px;
+      align-items: start;
+    }
+    #football-champion-manager .match-side { display: grid; gap: 10px; align-content: start; }
+    #football-champion-manager .match-status-card { padding: 10px; }
+    #football-champion-manager .match-status-roster { grid-template-columns: 1fr; gap: 2px; }
+    #football-champion-manager .status-heading { border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+    #football-champion-manager .match-dashboard .card { padding: 10px; }
+    #football-champion-manager .match-center { position: relative; }
+    #football-champion-manager .scoreboard { justify-content: center; margin-bottom: 6px; }
+    #football-champion-manager .team-score { flex: 1; text-align: center; }
+    #football-champion-manager .score-numbers { display: flex; align-items: center; justify-content: center; gap: 12px; }
+    #football-champion-manager .score-num { font-size: calc(var(--font-size-base) * 2); }
+    #football-champion-manager .clock-box { justify-content: center; color: var(--muted-foreground); margin: 3px 0; }
+    #football-champion-manager .match-pitch { min-height: 548px; }
+    #football-champion-manager .match-disc {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+      transition: left .7s linear, top .7s linear;
+      cursor: grab;
+    }
+    #football-champion-manager .match-disc:active { cursor: grabbing; }
+    #football-champion-manager .match-disc.is-selected { box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 45%, transparent); }
+    #football-champion-manager .match-disc.is-drop-target { box-shadow: 0 0 0 4px color-mix(in srgb, var(--viz-series-1) 55%, transparent); }
+    #football-champion-manager .match-disc.away {
+      background: var(--secondary);
+      color: var(--secondary-foreground);
+    }
+    #football-champion-manager .match-disc .disc-label {
+      position: absolute;
+      top: 25px;
+      color: var(--foreground);
+      background: color-mix(in srgb, var(--background) 82%, transparent);
+      border-radius: 3px;
+      padding: 0 3px;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    #football-champion-manager .ball {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--foreground);
+      box-shadow: 0 0 0 2px var(--background);
+      z-index: 4;
+      transition: left .45s linear, top .45s linear;
+    }
+    #football-champion-manager .match-actions { justify-content: space-between; flex-wrap: wrap; margin-top: 6px; }
+    #football-champion-manager .match-bench { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+    #football-champion-manager .match-bench-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 5px; }
+    #football-champion-manager .match-bench-player { min-width: 0; text-align: left; cursor: grab; }
+    #football-champion-manager .match-bench-player strong,
+    #football-champion-manager .match-bench-player span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #football-champion-manager .event-feed {
+      display: grid;
+      gap: 0;
+      margin-top: 8px;
+      max-height: 340px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      padding-right: 5px;
+    }
+    #football-champion-manager .event-item { padding: 6px 0; border-bottom: 1px solid var(--border); }
+    #football-champion-manager .event-head { justify-content: space-between; margin-bottom: 3px; }
+    #football-champion-manager .event-minute { color: var(--muted-foreground); }
+    #football-champion-manager .event-item.is-key strong { color: var(--foreground); }
+    #football-champion-manager .event-category { display: inline-flex; align-items: center; gap: 5px; }
+    #football-champion-manager .reason-box {
+      padding: 10px;
+      margin-top: 10px;
+      background: color-mix(in srgb, var(--viz-series-1) 9%, transparent);
+      border-left: 3px solid var(--viz-series-1);
+    }
+    #football-champion-manager .live-controls { display: grid; gap: 8px; }
+    #football-champion-manager .match-control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    #football-champion-manager .shout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    #football-champion-manager .player-status-list { display: grid; gap: 2px; margin-top: 6px; }
+    #football-champion-manager .status-line {
+      display: grid;
+      grid-template-columns: minmax(76px, 1fr) 32px 42px 66px;
+      gap: 6px;
+      align-items: center;
+      padding: 2px 0;
+    }
+    #football-champion-manager .energy { display: flex; align-items: center; gap: 5px; }
+    #football-champion-manager .energy .bar { flex: 1; }
+    #football-champion-manager .result-overlay {
+      display: none;
+      margin-top: 12px;
+      padding: 18px;
+      text-align: center;
+    }
+    #football-champion-manager .result-overlay.is-visible { display: block; }
+    #football-champion-manager .match-center .result-overlay.is-visible { position: absolute; z-index: 8; top: 170px; left: 12%; right: 12%; margin: 0; }
+    #football-champion-manager .result-actions { justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+    #football-champion-manager .hidden { display: none !important; }
+    #football-champion-manager .section-head { justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; }
+    #football-champion-manager .muted { color: var(--muted-foreground); }
+    #football-champion-manager .divider { height: 1px; background: var(--border); margin: 12px 0; }
+    #football-champion-manager .pool-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); min-height: 270px; }
+    #football-champion-manager .pool-pagination { display: none; }
+    #football-champion-manager .tactic-pitch {
+      width: min(100%, 540px);
+      min-height: 720px;
+      aspect-ratio: 68 / 105;
+      margin: 0 auto;
+    }
+    #football-champion-manager .tactic-pitch::before {
+      background:
+        linear-gradient(to bottom, transparent calc(50% - .5px), color-mix(in srgb, var(--foreground) 32%, transparent) 50%, transparent calc(50% + .5px)),
+        radial-gradient(circle at 50% 50%, transparent 10%, color-mix(in srgb, var(--foreground) 34%, transparent) 10.3%, transparent 10.6%);
+    }
+    #football-champion-manager .tactic-pitch::after {
+      left: 28%; right: 28%; top: 4%; bottom: 4%;
+      border-left: 0; border-right: 0;
+      border-top: 1px solid color-mix(in srgb, var(--foreground) 34%, transparent);
+      border-bottom: 1px solid color-mix(in srgb, var(--foreground) 34%, transparent);
+    }
+    #football-champion-manager .match-dashboard {
+      grid-template-columns: minmax(360px, 440px) minmax(0, 1fr) minmax(340px, 390px);
+      width: 100%;
+      overflow: hidden;
+    }
+    #football-champion-manager .match-dashboard > *,
+    #football-champion-manager .match-center,
+    #football-champion-manager .match-side { min-width: 0; max-width: 100%; }
+    #football-champion-manager .match-pitch {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      min-height: 0;
+    }
+    #football-champion-manager .match-board-card { padding: 10px; }
+    #football-champion-manager .match-home-board {
+      width: min(100%, 350px);
+      min-height: 0;
+      aspect-ratio: 68 / 92;
+      margin: 6px auto;
+    }
+    #football-champion-manager .match-home-board .formation-player { width: 90px; }
+    #football-champion-manager .match-home-board .player-disc { width: 28px; height: 28px; }
+    #football-champion-manager .match-home-board .player-label { line-height: 1.05; }
+    #football-champion-manager .match-board-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    #football-champion-manager .match-board-card .match-bench-row { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    #football-champion-manager .compact-home-status { margin-top: 7px; }
+    #football-champion-manager .compact-home-status .match-status-roster { grid-template-columns: 1fr 1fr; column-gap: 12px; }
+    #football-champion-manager .compact-home-status .player-status-list { margin-top: 4px; }
+    @media (max-width: 1200px) {
+      #football-champion-manager .draft-layout { grid-template-columns: 160px minmax(480px, 1fr) 160px; gap: 12px; }
+      #football-champion-manager .pool-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      #football-champion-manager .tactics-layout { grid-template-columns: 220px minmax(420px, 1fr) 260px; }
+      #football-champion-manager .match-dashboard { grid-template-columns: 260px minmax(560px, 1fr) 320px; }
+      #football-champion-manager .match-status-roster { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 980px) {
+      #football-champion-manager .draft-layout { grid-template-columns: 150px minmax(350px, 1fr) 150px; gap: 10px; }
+      #football-champion-manager .pool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #football-champion-manager .tactics-layout,
+      #football-champion-manager .match-dashboard { grid-template-columns: 1fr 1fr; }
+      #football-champion-manager .tactics-center,
+      #football-champion-manager .match-center { grid-column: 1 / -1; grid-row: 1; }
+      #football-champion-manager .tactic-pitch,
+      #football-champion-manager .match-pitch { aspect-ratio: 105 / 68; min-height: 400px; }
+      #football-champion-manager .draft-scout .attribute-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 760px) {
+      #football-champion-manager { padding-inline: 2px; }
+      #football-champion-manager .hero,
+      #football-champion-manager .tactics-layout,
+      #football-champion-manager .match-dashboard { grid-template-columns: 1fr; }
+      #football-champion-manager .tactics-center,
+      #football-champion-manager .match-center { grid-column: auto; grid-row: auto; }
+      #football-champion-manager .hero-main { min-height: 260px; padding: 22px; }
+      #football-champion-manager .stepper .step span:last-child { display: none; }
+      #football-champion-manager .tactic-pitch,
+      #football-champion-manager .match-pitch { aspect-ratio: 105 / 68; min-height: 360px; }
+      #football-champion-manager .match-bench-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 680px) {
+      #football-champion-manager .draft-layout { grid-template-columns: 1fr 1fr; }
+      #football-champion-manager .draft-center { grid-column: 1 / -1; grid-row: 1; }
+      #football-champion-manager .draft-team-column.card { position: static; }
+    }
+    @media (max-width: 400px) {
+      #football-champion-manager .pool-grid { grid-template-columns: 1fr; }
+      #football-champion-manager .join-form { grid-template-columns: 1fr; }
+      #football-champion-manager .status-line { grid-template-columns: minmax(68px, 1fr) 30px 38px 54px; }
+    }
+  </style>
+
+  <header class="game-topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><i data-lucide="trophy"></i></div>
+      <div class="brand-copy">
+        <h2>足球冠军教练</h2>
+        <p class="text-small">阵容推演 · 战术对抗 · 透明复盘</p>
+      </div>
+    </div>
+    <nav class="stepper" aria-label="游戏阶段">
+      <div class="step is-active" data-step="lobby"><span class="step-dot">1</span><span>房间</span></div>
+      <div class="step" data-step="draft"><span class="step-dot">2</span><span>选秀</span></div>
+      <div class="step" data-step="tactics"><span class="step-dot">3</span><span>部署</span></div>
+      <div class="step" data-step="match"><span class="step-dot">4</span><span>比赛</span></div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="screen is-active" data-screen="lobby">
+      <div class="hero">
+        <div class="hero-main card">
+          <span class="eyebrow text-small">每一条指令，都有代价</span>
+          <h1>用阵容和判断，赢下九十分钟</h1>
+          <p class="hero-lead">从80人公共池组建16人名单，设置阵型与针对性部署，在8分钟内完成一场可调整、可解释、必分胜负的足球推演。</p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" type="button" data-action="create-ai"><i data-lucide="bot" aria-hidden="true"></i> 与 AI 开赛</button>
+            <button class="btn" type="button" data-action="create-friend"><i data-lucide="users" aria-hidden="true"></i> 创建好友房</button>
+          </div>
+        </div>
+        <div class="lobby-side">
+          <div class="card">
+            <strong>加入好友房</strong>
+            <p class="text-small muted">输入6位房间码，进入同一选秀桌。</p>
+            <div class="join-form">
+              <label class="sr-only" for="join-code">房间码</label>
+              <input id="join-code" class="form-control" maxlength="6" placeholder="例如 C8M2Q7" autocomplete="off">
+              <button class="btn" type="button" data-action="join-room">加入</button>
+            </div>
+          </div>
+          <div class="card">
+            <strong>一局完整体验</strong>
+            <div class="feature-list">
+              <div class="feature-item"><i class="feature-icon" data-lucide="shuffle" aria-hidden="true"></i><div><span>分层蛇形选秀</span><div class="text-small muted">400人总库抽取80人，单局传奇不超过7人</div></div></div>
+              <div class="feature-item"><i class="feature-icon" data-lucide="route" aria-hidden="true"></i><div><span>有得有失的战术</span><div class="text-small muted">收益、体能成本与风险实时可见</div></div></div>
+              <div class="feature-item"><i class="feature-icon" data-lucide="scan-search" aria-hidden="true"></i><div><span>因果战报</span><div class="text-small muted">每个进球都能追溯空间与对抗原因</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="draft">
+      <div class="screen-title">
+        <h3>80人公共池 · 蛇形选秀</h3>
+        <p>双方各选16人：80人池最多7名传奇。高总评、位置稀缺、战术标签与蛇形顺位都需要取舍。</p>
+      </div>
+      <div class="room-strip">
+        <div><span class="muted">房间码</span> <strong class="room-code" data-room-code>------</strong></div>
+        <div><span class="muted">对手</span> <strong data-opponent>战术 AI · 专家</strong></div>
+        <button class="btn btn-ghost" type="button" data-action="copy-room"><i data-lucide="copy" aria-hidden="true"></i> 复制房间码</button>
+      </div>
+      <div class="draft-layout">
+        <aside class="draft-team-column card is-picking" data-roster-panel="home">
+          <div class="draft-team-title"><strong>我的阵容</strong><span class="viz-badge"><span data-home-count>0</span>/16</span></div>
+          <div class="draft-team-hint text-small muted">主队 · 蓝色选秀席</div>
+          <div class="roster-mini" data-home-roster></div>
+        </aside>
+
+        <div class="draft-center">
+          <div class="turn-banner">
+            <div><strong data-turn-text>第 1 签 · 轮到主队</strong><div class="text-small muted" data-turn-rule>主队1签 → 客队2签 → 主队2签</div></div>
+            <div><span class="viz-badge" data-pick-count>0 / 32</span></div>
+          </div>
+          <div class="viz-controls pool-tools">
+            <div class="position-tabs" role="group" aria-label="按位置筛选公共池">
+              <button class="btn btn-primary" type="button" data-position-group="门将" aria-pressed="true">门将 <span data-group-count="门将">8</span></button>
+              <button class="btn" type="button" data-position-group="后卫" aria-pressed="false">后卫 <span data-group-count="后卫">24</span></button>
+              <button class="btn" type="button" data-position-group="中场" aria-pressed="false">中场 <span data-group-count="中场">24</span></button>
+              <button class="btn" type="button" data-position-group="前锋" aria-pressed="false">前锋 <span data-group-count="前锋">24</span></button>
+            </div>
+            <button class="btn btn-ghost" type="button" data-action="autodraft"><i data-lucide="fast-forward" aria-hidden="true"></i> 一键完成选秀</button>
+          </div>
+          <div class="draft-scout card" data-player-detail>
+            <strong>球探报告</strong>
+            <p class="text-small muted">选择一名球员查看关键属性与鲜明标签。</p>
+          </div>
+          <div class="pool-grid" data-player-pool aria-label="球员公共池"></div>
+          <div class="pool-pagination">
+            <span class="text-small muted" data-pool-range>门将 · 共8人 · 当前分类全部显示</span>
+            <div class="viz-row">
+              <button class="btn btn-ghost" type="button" data-action="pool-prev">上一页</button>
+              <span class="viz-badge" data-pool-page>1 / 5</span>
+              <button class="btn" type="button" data-action="pool-next">下一页</button>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block" type="button" data-action="to-tactics" disabled>完成选秀，进入部署</button>
+        </div>
+
+        <aside class="draft-team-column card" data-roster-panel="away">
+          <div class="draft-team-title"><strong>敌队阵容</strong><span class="viz-badge"><span data-away-count>0</span>/16</span></div>
+          <div class="draft-team-hint text-small muted">客队 · 对手选秀席</div>
+          <div class="roster-mini" data-away-roster></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="tactics">
+      <div class="screen-title">
+        <h3>赛前部署</h3>
+        <p>配置首发、阵型、战术倾向与针对性任务。所有指令都会改变收益与风险。</p>
+      </div>
+      <div class="tactics-layout">
+        <aside class="tactics-panel card">
+          <div class="section-head"><strong>16人阵容</strong><span><span class="viz-badge" data-lineup-count>首发 0/11</span> <span class="viz-badge" data-team-power>战力 --</span></span></div>
+          <p class="text-small muted">首发默认为空，请自行拖拽配置；也可由系统按位置适应与巅峰能力自动选择。</p>
+          <button class="btn btn-primary btn-block" type="button" data-action="best-lineup"><i data-lucide="sparkles" aria-hidden="true"></i> 一键配置最佳阵容</button>
+          <div class="squad-list" data-squad-list aria-label="主队球员能力列表"></div>
+        </aside>
+
+        <div class="tactics-center">
+          <div class="tactic-pitch" data-tactic-pitch role="img" aria-label="主队首发阵型俯视图"></div>
+          <div class="bench-area">
+            <div class="bench-row hidden" data-bench></div>
+            <p class="text-small muted">拖拽阵容列表中的球员到任一位置；也可先点击球员，再点击球场位置完成替换。</p>
+          </div>
+        </div>
+
+        <aside class="tactics-panel card">
+          <div class="section-head"><strong>基础战术</strong><i data-lucide="sliders-horizontal" aria-hidden="true"></i></div>
+          <div class="control-stack">
+            <label class="form-label">阵型
+              <select class="form-select" data-formation>
+                <option value="433">4-3-3 控制</option><option value="4231">4-2-3-1 均衡</option><option value="442">4-4-2 经典</option><option value="4141">4-1-4-1 控场</option><option value="4222">4-2-2-2 窄攻</option><option value="352">3-5-2 压迫</option><option value="343">3-4-3 强攻</option><option value="532">5-3-2 防反</option>
+              </select>
+            </label>
+            <label class="form-label">压迫强度
+              <select class="form-select" data-tactic="press">
+                <option value="mid">中位压迫</option><option value="high">高位压迫</option><option value="low">低位回收</option>
+              </select>
+            </label>
+            <label class="form-label">进攻方式
+              <select class="form-select" data-tactic="attack">
+                <option value="control">控球组织</option><option value="direct">快速反击</option><option value="wide">边路强攻</option>
+              </select>
+            </label>
+            <label class="form-label">防线高度
+              <select class="form-select" data-tactic="line">
+                <option value="normal">标准</option><option value="high">前压</option><option value="deep">回撤</option>
+              </select>
+            </label>
+          </div>
+          <div class="divider"></div>
+          <div class="section-head"><strong>针对性部署</strong><i data-lucide="crosshair" aria-hidden="true"></i></div>
+          <div class="control-stack">
+            <label class="form-label">重点打击区域
+              <select class="form-select" data-tactic="focus">
+                <option value="right">对手右后卫身后</option><option value="middle">中路二点球</option><option value="left">对手左肋部</option>
+              </select>
+            </label>
+            <label class="form-label">盯防对象
+              <select class="form-select" data-tactic="mark">
+                <option value="creator">核心组织者</option><option value="striker">中锋</option><option value="winger">速度边锋</option>
+              </select>
+            </label>
+          </div>
+          <div class="divider"></div>
+          <strong>当前收益与代价</strong>
+          <div data-tradeoffs></div>
+          <div class="divider"></div>
+          <strong>系统预判</strong>
+          <div class="compatibility"><span>位置适应性</span><strong data-adaptation>88%</strong></div>
+          <div class="compatibility"><span>阵容默契</span><strong data-chemistry>84%</strong></div>
+          <div class="compatibility"><span>对位优势</span><strong data-matchup>+6</strong></div>
+          <p class="text-small muted" data-scout-note>AI倾向边后卫前插，右侧身后可能出现反击通道。</p>
+          <button class="btn btn-primary btn-block" type="button" data-action="start-match" disabled><i data-lucide="play" aria-hidden="true"></i> 请先配置11名首发</button>
+        </aside>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="match">
+      <div class="scoreboard">
+        <div class="team-score"><span class="muted">主队</span><div><strong>冠军十一人</strong></div></div>
+        <div>
+          <div class="score-numbers"><strong class="score-num" data-home-score>0</strong><span>—</span><strong class="score-num" data-away-score>0</strong></div>
+          <div class="clock-box"><span class="viz-badge" data-match-phase>常规时间</span><strong data-match-clock>00:00</strong><span class="viz-badge" data-momentum>势头 均衡</span></div>
+        </div>
+        <div class="team-score"><span class="muted">客队</span><div><strong data-away-name>战术 AI</strong></div></div>
+      </div>
+      <div class="room-strip text-small">
+        <span data-home-tactic-summary>主队 · 4-3-3 · 中位压迫 · 控球组织</span>
+        <span class="muted">全屏比赛控制台 · 阵容、战术板与战报同步更新</span>
+        <span>客队 · 4-2-3-1 · 高位压迫 · 边路强攻</span>
+      </div>
+      <div class="match-dashboard">
+        <aside class="match-side">
+          <section class="card match-board-card">
+            <div class="section-head"><strong>主队临场阵型板</strong><span class="viz-badge" data-subs-count>0/5 换人</span></div>
+            <div class="live-controls">
+              <div class="match-board-tools">
+                <label class="form-label">比赛阵型
+                  <select class="form-select" data-live-formation><option value="433">4-3-3</option><option value="4231">4-2-3-1</option><option value="442">4-4-2</option><option value="4141">4-1-4-1</option><option value="4222">4-2-2-2</option><option value="352">3-5-2</option><option value="343">3-4-3</option><option value="532">5-3-2</option></select>
+                </label>
+                <label class="form-label">压迫强度
+                  <select class="form-select" data-live-tactic="press"><option value="mid">中位压迫</option><option value="high">高位压迫</option><option value="low">低位回收</option></select>
+                </label>
+              </div>
+              <div class="tactic-pitch match-home-board" data-match-home-board role="img" aria-label="主队可拖拽阵型与换人战术板"></div>
+              <div class="match-bench">
+                <div class="section-head"><strong>替补席</strong><span class="text-small muted">拖到场上完成换人</span></div>
+                <div class="match-bench-row" data-match-bench></div>
+              </div>
+              <div class="match-board-tools">
+                <label class="form-label">进攻方式
+                  <select class="form-select" data-live-tactic="attack"><option value="control">控球组织</option><option value="direct">快速反击</option><option value="wide">边路强攻</option></select>
+                </label>
+                <label class="form-label">针对区域
+                  <select class="form-select" data-live-tactic="focus"><option value="right">右路身后</option><option value="middle">中路二点</option><option value="left">左侧肋部</option></select>
+                </label>
+              </div>
+              <div>
+                <span class="form-label">场边喊话</span>
+                <div class="shout-row"><button class="btn" type="button" data-shout="encourage">鼓励</button><button class="btn" type="button" data-shout="demand">施压</button></div>
+              </div>
+              <p class="text-small muted" data-live-cost>中位压迫：结构稳定，但前场夺回球权较少。</p>
+            </div>
+          </section>
+        </aside>
+
+        <div class="match-center">
+          <div class="match-pitch" data-match-pitch role="img" aria-label="可拖拽调整位置与换人的2D俯视比赛战术板">
+            <div class="ball" data-ball aria-hidden="true"></div>
+          </div>
+          <div class="match-actions">
+            <div class="viz-controls">
+              <button class="btn btn-primary" type="button" data-action="toggle-match"><i data-lucide="play" aria-hidden="true"></i> 开始</button>
+              <label class="form-label">速度
+                <select class="form-select" data-speed><option value="1">×1（约8分钟）</option><option value="4">×4</option><option value="16">×16 演示</option></select>
+              </label>
+            </div>
+            <span class="text-small muted">可拖拽场上球员互换位置</span>
+            <button class="btn btn-ghost" type="button" data-action="finish-match">跳至赛果</button>
+          </div>
+          <section class="card match-status-card compact-home-status">
+            <div class="section-head"><strong>主队实时状态</strong><span class="viz-badge">评分 · 健康 · 体力</span></div>
+            <div class="status-line status-heading text-small muted"><span>球员</span><span>评分</span><span>健康</span><span>体力</span></div>
+            <div class="player-status-list match-status-roster" data-home-status-list></div>
+          </section>
+          <div class="reason-box" data-reason-box>
+            <strong>比赛引擎解释</strong>
+            <p class="text-small muted">关键事件发生后，这里会显示能力、空间、体力、战术克制与随机性的贡献。</p>
+          </div>
+          <div class="result-overlay card" data-result>
+            <h3 data-result-title>比赛结束</h3><p data-result-copy></p>
+            <div class="result-actions"><button class="btn" type="button" data-action="review">查看进球复盘</button><button class="btn btn-primary" type="button" data-action="play-again">再来一局</button></div>
+          </div>
+        </div>
+
+        <aside class="match-side">
+          <section class="card match-status-card">
+            <div class="section-head"><strong>客队首发</strong><span class="viz-badge">实时状态</span></div>
+            <div class="status-line status-heading text-small muted"><span>球员</span><span>评分</span><span>健康</span><span>体力</span></div>
+            <div class="player-status-list match-status-roster" data-away-status-list></div>
+          </section>
+          <section class="card">
+            <div class="section-head"><strong>实时文字战报</strong><span class="viz-badge" data-event-count>0条</span></div>
+            <div class="event-feed" data-event-feed role="log" aria-label="实时文字战报，可上下滚动查看历史事件" aria-live="polite"></div>
+          </section>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const root = document.getElementById('football-champion-manager');
+      if (!root) return;
+
+      const names = {
+        '门将': ['列夫·雅辛','布冯','诺伊尔','卡西利亚斯','舒梅切尔','范德萨','切赫','库尔图瓦','阿利松','埃德森','奥布拉克','多纳鲁马','迪达','卡恩','巴尔德斯','曾加','佐夫','纳瓦斯','希曼','德赫亚','马丁内斯','迈尼昂','特尔施特根','坎波斯'],
+        '中后卫': ['贝肯鲍尔','巴雷西','马尔蒂尼','内斯塔','卡纳瓦罗','拉莫斯','皮克','普约尔','范戴克','蒂亚戈·席尔瓦','费迪南德','维迪奇','特里','斯塔姆','科曼','鲁本·迪亚斯','萨利巴','吕迪格','马尔基尼奥斯','阿劳霍','卢西奥','德塞利','萨穆埃尔','戈丁','基耶利尼','博努奇','佩佩','瓦拉内','坎贝尔','亚当斯','贝尔戈米','布兰科','科勒尔','耶罗','胡梅尔斯','阿亚拉','里杰卡尔德','帕萨雷拉','孔帕尼','德里赫特'],
+        '边后卫': ['卡福','卡洛斯','阿尔维斯','拉姆','萨内蒂','阿什利·科尔','马塞洛','阿诺德','罗伯逊','沃克','坎塞洛','阿方索·戴维斯','特奥·埃尔南德斯','里斯·詹姆斯','卡瓦哈尔','阿尔巴','麦孔','埃弗拉','赞布罗塔','利扎拉祖','布雷默','卡布里尼','图拉姆','加里·内维尔','埃尔文','基米希','弗林蓬','哈基米','门德斯','格里马尔多','迪马尔科','库库雷利亚'],
+        '中场': ['齐达内','哈维','伊涅斯塔','莫德里奇','克罗斯','皮尔洛','哈维·阿隆索','布斯克茨','罗德里','德布劳内','贝林厄姆','维埃拉','马克莱莱','坎特','杰拉德','兰帕德','斯科尔斯','罗伊·基恩','古利特','马特乌斯','普拉蒂尼','济科','里瓦尔多','卡卡','内德维德','西多夫','法布雷加斯','大卫·席尔瓦','厄齐尔','斯内德','里克尔梅','博格巴','巴尔韦德','佩德里','维尔茨','穆西亚拉','赖斯','京多安','若日尼奥','贝隆'],
+        '边锋': ['梅西','克里斯蒂亚诺·罗纳尔多','罗纳尔迪尼奥','乔治·贝斯特','加林查','菲戈','罗本','里贝里','内马尔','姆巴佩','萨拉赫','马内','亨利','贝尔','吉格斯','斯托伊奇科夫','萨卡','维尼修斯','亚马尔','登贝莱','克瓦拉茨赫利亚','孙兴慜','阿扎尔','桑乔','迪马利亚','奥维马斯','华金','贝尔纳多·席尔瓦','路易斯·迪亚斯','拉菲尼亚','罗德里戈','普利西奇'],
+        '中锋': ['贝利','马拉多纳','罗纳尔多','克鲁伊夫','范巴斯滕','盖德·穆勒','尤西比奥','普斯卡什','罗马里奥','巴蒂斯图塔','舍甫琴科','莱万多夫斯基','苏亚雷斯','本泽马','哈兰德','凯恩','德罗巴','埃托奥','伊布拉希莫维奇','鲁尼','范尼斯特鲁伊','克洛泽','比利亚','托雷斯','阿圭罗','因扎吉','克雷斯波','劳尔','博格坎普','坎通纳','奥斯梅恩','劳塔罗'],
+      };
+      const expandedNames = {
+        '门将':['雷纳','洛里','戈登·班克斯','彼得·希尔顿','帕特·詹宁斯','塔法雷尔','朱利奥·塞萨尔','巴特兹','莱曼','汉达诺维奇','斯泽斯尼','皮克福德','索默','拉亚','帕柳卡','弗里德尔','普雷德霍姆','维卡里奥'],
+        '中后卫':['加布里埃尔·马加良斯','米利唐','科纳特','巴斯托尼','阿切尔比','帕瓦尔','克里斯滕森','保·托雷斯','伊尼戈·马丁内斯','约纳坦·塔','乌帕梅卡诺','金玟哉','斯通斯','阿克','拉波尔特','马奎尔','贝纳蒂亚','曼加拉','库利巴利','什克里尼亚尔','克里斯蒂安·罗梅罗','利桑德罗·马丁内斯','博特曼','伊萨克·希恩','斯莫林','托莫里','格伊','布兰斯韦特','穆里略','德拉古辛'],
+        '边后卫':['卢克·肖','万-比萨卡','佩德罗·波罗','古斯托','本·怀特','廷贝尔','津琴科','基兰·蒂尔尼','特里皮尔','利夫拉门托','米切尔','迪奥戈·达洛特','雷吉隆','塞梅多','格雷罗','赫苏斯·纳瓦斯','胡安弗兰','菲利佩·路易斯','法比奥·科恩特朗','达尼洛','邓弗里斯','莫利纳','坎比亚索','卡拉布里亚','比拉吉','凯尔凯兹','艾特-努里','万德森','穆尼奥斯','扬库洛夫斯基'],
+        '中场':['卡塞米罗','布鲁诺·费尔南德斯','托马斯·穆勒','亚亚·图雷','大卫·贝克汉姆','巴拉克','德科','埃辛','施魏因施泰格','雷东多','苏格拉底','加图索','德罗西','坎比亚索','马尔基西奥','阿尔贝蒂尼','范德法特','艾马尔','儒尼尼奥·佩南布卡诺','门迭塔','哈维尔·马斯切拉诺','米克尔·阿尔特塔','卡里克','弗莱彻','哈格里夫斯','阿隆·拉姆塞','威尔希尔','乔·科尔','科瓦契奇','拉基蒂奇','布罗佐维奇','费尔南迪尼奥','若昂·穆蒂尼奥','鲁本·内维斯','维蒂尼亚','若昂·内维斯','帕利尼亚','弗兰基·德容','加维','奥尔莫','托纳利','巴雷拉','恰尔汗奥卢','洛卡特利','拉比奥','琼阿梅尼','卡马文加','赖因德斯','扎卡','凯塞多','恩佐·费尔南德斯','麦卡利斯特','格拉文贝赫','索博斯洛伊','麦迪逊','帕尔默','福登','厄德高','蒂勒曼斯','吉马良斯','乔林顿','帕奎塔','库杜斯','埃泽','加拉格尔','梅努','沃顿','道格拉斯·路易斯','安德烈·戈麦斯','塞尔吉·罗贝托','伊斯科','塞瓦略斯','科克','萨乌尔','马科斯·略伦特','格雷茨卡','安德里希','帕夫洛维奇','萨比策','莱默尔','阿姆拉巴特','本坦库尔','比苏马','霍伊别尔','埃里克森','芒特','诺尔高','桑德·贝格','安德烈·特林达德'],
+        '边锋':['勒鲁瓦·萨内','金斯利·科曼','杰克·格里利什','杰里米·多库','贡萨洛·格德斯','拉什福德','库卢塞夫斯基','安东尼','马丁内利','特罗萨德','阿德耶米','马杜埃凯','加纳乔','奥利塞','巴尔科拉','小基耶萨','因西涅','贝拉尔迪','佩德罗·内托','阿达马·特劳雷','马赫雷斯','斯特林','佩里西奇','威廉','佩德罗','纳尼','夸雷斯马','西芒','久利','马卢达','达夫','麦克马纳曼','约翰·巴恩斯','瓦德尔','奥坎波斯'],
+        '中锋':['胡利安·阿尔瓦雷斯','伊萨克','哲凯赖什','塞斯科','霍伊伦','努涅斯','奥利·沃特金斯','索兰克','伊万·托尼','吉鲁','卡瓦尼','法尔考','伊瓜因','曼朱基奇','迭戈·科斯塔','卢卡库','莫拉塔','亚历克西斯·桑切斯','奥巴梅扬','范佩西','特维斯','贝尔巴托夫','卢卡·托尼','特雷泽盖','维埃里','皮耶罗','帕特里克·克鲁伊维特','萨莫拉诺','萨拉斯','埃尔伯','马凯','扬·科勒','约维奇','米特罗维奇','马尔穆什']
+      };
+      const rosterTargets = {'门将':40,'中后卫':65,'边后卫':55,'中场':120,'边锋':60,'中锋':60};
+      Object.entries(expandedNames).forEach(([pos,list])=>{
+        names[pos]=[...names[pos].filter(name=>name!=='厄齐尔'),...list].slice(0,rosterTargets[pos]);
+      });
+      const quotas = {'门将':8,'中后卫':12,'边后卫':12,'中场':24,'边锋':12,'中锋':12};
+      const eliteQuotas = {'门将':1,'中后卫':1,'边后卫':1,'中场':2,'边锋':1,'中锋':1};
+      const positionGroups = {'门将':['门将'],'后卫':['中后卫','边后卫'],'中场':['中场'],'前锋':['边锋','中锋']};
+      const tags = {
+        '门将':['门线之神','出击清道夫','大赛先生','长传发牌器','点球专家'],
+        '中后卫':['空中堡垒','上抢猎手','出球中卫','防线领袖','逆境铁卫'],
+        '边后卫':['永动边翼','套边机器','内收组织','回追专家','传中制导'],
+        '中场':['节拍器','摆脱大师','纵深传球','中场屏障','远射威胁'],
+        '边锋':['爆点边锋','逆足内切','反击利刃','一对一专家','肋部幽灵'],
+        '中锋':['禁区之王','背身支点','反越位专家','全能前锋','门前嗅觉']
+      };
+      const outfieldAttrKeys = ['速度','射门','传球','盘带','防守','身体'];
+      const goalkeeperAttrKeys = ['扑救','反应','手控','出击','长传','制空'];
+      const positionBias = {
+        '门将':[91,92,89,87,83,90], '中后卫':[72,58,76,68,91,88], '边后卫':[87,69,82,82,82,79],
+        '中场':[78,79,90,87,76,75], '边锋':[92,86,84,92,50,72], '中锋':[86,92,77,84,47,87]
+      };
+      const peakCurves = {
+        '门将':[97,95,95,95,94,94,94,93,93,93,93,90,94,95,90,93,95,90,90,92,91,91,92,91],
+        '中后卫':[98,97,97,96,96,96,92,94,94,93,94,93,93,92,94,93,91,90,91,90,92,93,91,91,92,90,90,90,91,89,91,90,90,91,90,91,96,94,91,89],
+        '边后卫':[96,97,96,95,95,93,94,91,91,92,90,92,91,89,91,91,92,91,92,90,91,90,94,89,89,92,89,92,90,90,91,89],
+        '中场':[98,97,97,97,95,96,93,95,95,96,94,95,93,94,95,94,94,93,97,97,98,97,96,96,95,94,93,94,93,93,93,92,92,91,91,91,91,92,89,92],
+        '边锋':[99,98,97,97,97,95,95,95,97,96,95,93,96,94,93,95,91,94,90,91,91,93,94,88,92,90,89,93,90,91,90,90],
+        '中锋':[99,99,98,98,97,98,97,98,96,95,95,96,96,95,95,95,94,95,93,94,94,93,93,92,94,92,92,94,95,95,90,91]
+      };
+      const signatureAttrs = {
+        '列夫·雅辛':[98,99,96,95,90,97], '布冯':[98,97,97,92,88,96], '诺伊尔':[96,97,94,99,97,94], '卡西利亚斯':[98,99,94,94,86,90],
+        '贝肯鲍尔':[84,76,96,91,98,93], '马尔蒂尼':[89,70,91,88,99,94], '卡福':[96,78,91,91,91,91], '卡洛斯':[98,91,88,91,86,92],
+        '齐达内':[86,94,99,98,72,90], '哈维':[76,83,99,95,78,70], '伊涅斯塔':[85,88,98,99,70,72], '莫德里奇':[84,88,98,97,82,82],
+        '梅西':[96,99,98,99,42,78], '克里斯蒂亚诺·罗纳尔多':[98,99,90,96,45,97], '罗纳尔迪尼奥':[93,94,97,99,43,84], '内马尔':[96,93,95,99,42,73],
+        '贝利':[98,99,96,99,57,94], '马拉多纳':[95,96,99,99,48,84], '罗纳尔多':[99,99,89,98,42,94], '克鲁伊夫':[96,97,99,98,63,87],
+        '范巴斯滕':[91,99,91,94,46,95], '盖德·穆勒':[88,99,83,91,48,92], '亨利':[98,97,92,96,47,91], '姆巴佩':[99,96,90,97,44,89]
+      };
+      const state = {
+        screen:'lobby', roomCode:'', opponent:'战术 AI · 专家', pool:[], selected:null,
+        rosters:{home:[],away:[]}, draftOrder:[], pickIndex:0, drafting:false, poolGroup:'门将', poolPage:0, poolPageSize:8,
+        formation:'433', tactics:{press:'mid',attack:'control',line:'normal',focus:'right',mark:'creator'},
+        starting:[], awayStarting:[], bench:[], selectedStarter:null, draggedPlayerId:null, matchSelectedId:null,
+        onlineMode:false, onlineTeam:'home', onlineMatchSetup:null, onlineDeploymentVersion:-1,
+        match:{minute:0,phase:'常规时间',home:0,away:0,running:false,speed:1,events:[],eventTotal:0,energy:100,morale:72,subs:0,tick:0,finished:false,penalty:''}
+      };
+      const online = window.FCOnline || null;
+
+      const q = (s) => root.querySelector(s);
+      const qa = (s) => [...root.querySelectorAll(s)];
+      const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
+      const hash = (str) => [...str].reduce((a,c) => ((a*31)+c.charCodeAt(0))>>>0, 2166136261);
+      const sample = (arr,n,seedShift=0) => {
+        const copy = [...arr];
+        let seed = (Date.now()+seedShift)>>>0;
+        for(let i=copy.length-1;i>0;i--){ seed=(seed*1664525+1013904223)>>>0; const j=seed%(i+1); [copy[i],copy[j]]=[copy[j],copy[i]]; }
+        return copy.slice(0,n);
+      };
+      const shortName = (name) => name.length > 8 ? name.slice(0,7)+'…' : name;
+      const uid = () => Math.random().toString(36).slice(2,8).toUpperCase();
+
+      function makePlayer(name,pos,index){
+        const h=hash(name+pos);
+        const reserveIndex=Math.max(0,index-peakCurves[pos].length);
+        const overall=peakCurves[pos][index]||clamp(91-Math.floor(reserveIndex/10),84,91);
+        const keys=pos==='门将'?goalkeeperAttrKeys:outfieldAttrKeys;
+        const attrs={};
+        const signature=signatureAttrs[name];
+        positionBias[pos].forEach((base,i)=>{
+          const historicalLift=(overall-90)*0.72;
+          const roleVariation=((h>>>(i*3))%5)-2;
+          attrs[keys[i]]=clamp(Math.round(signature?signature[i]:base+historicalLift+roleVariation),40,99);
+        });
+        const posTags=tags[pos];
+        const tier=overall>=95?'传奇':overall>=90?'核心':'实力派';
+        return {id:name+'-'+pos,name,pos,overall,attrs,attrKeys:keys,labels:[posTags[h%posTags.length],posTags[(h+2)%posTags.length]],foot:h%3===0?'左脚':'右脚',fitness:96+(h%4),form:8+(h%3),tier,isLegend:overall>=95,ratingBasis:'巅峰赛季45% · 历史评价35% · 位置影响力20%'};
+      }
+      const allPlayers = Object.entries(names).flatMap(([pos,list])=>list.map((name,index)=>makePlayer(name,pos,index)));
+
+      function makeDraftOrder(){
+        const h=[1,2,2,2,2,2,2,2,1], a=[2,2,2,2,2,2,2,1,1], order=[];
+        for(let i=0;i<h.length;i++){ for(let j=0;j<h[i];j++) order.push('home'); for(let j=0;j<a[i];j++) order.push('away'); }
+        return order;
+      }
+      function buildPool(){
+        state.pool=Object.entries(quotas).flatMap(([pos,n],i)=>{
+          const candidates=allPlayers.filter(p=>p.pos===pos);
+          const elite=candidates.filter(p=>p.isLegend), regular=candidates.filter(p=>!p.isLegend);
+          const eliteCount=Math.min(eliteQuotas[pos],elite.length);
+          return [...sample(elite,eliteCount,i*733),...sample(regular,n-eliteCount,i*913)];
+        });
+        state.pool=sample(state.pool,80,4421);
+        state.selected=state.pool.find(p=>p.pos==='门将')||state.pool[0];
+        state.rosters={home:[],away:[]}; state.pickIndex=0; state.draftOrder=makeDraftOrder(); state.poolGroup='门将'; state.poolPage=0;
+      }
+
+      function applyOnlineRoom(payload){
+        const room=payload.room||payload;
+        state.onlineMode=true;state.onlineTeam=payload.team||state.onlineTeam||'home';
+        state.roomCode=room.code;state.opponent=room.players&&room.players.away?'好友 · 已连接':'好友 · 等待加入';
+        state.pool=room.pool||state.pool;state.rosters=room.rosters||{home:[],away:[]};state.draftOrder=room.draftOrder||makeDraftOrder();state.pickIndex=room.pickIndex||0;
+        state.selected=state.pool.find(p=>p.pos==='门将')||state.pool[0];
+        q('[data-room-code]').textContent=state.roomCode;q('[data-opponent]').textContent=state.opponent;
+        if(state.screen==='lobby')setScreen('draft');else renderDraft();
+      }
+      function handleOnlineMatchReady(payload){
+        const own=payload.deployments[state.onlineTeam], other=payload.deployments[state.onlineTeam==='home'?'away':'home'];
+        if(!own||!other)return;
+        state.onlineMatchSetup={own,other};state.starting=own.starting;state.bench=own.bench;state.formation=own.formation;state.tactics=own.tactics;
+        setScreen('match');
+      }
+      function applyOnlineMatch(snapshot){
+        if(!state.onlineMode||state.screen!=='match')return;
+        const awayView=state.onlineTeam==='away';
+        const otherTeam=state.onlineTeam==='home'?'away':'home';
+        const deploymentChanged=snapshot.deploymentVersion!==undefined&&snapshot.deploymentVersion!==state.onlineDeploymentVersion;
+        if(deploymentChanged&&snapshot.deployments&&snapshot.deployments[otherTeam]){
+          state.awayStarting=snapshot.deployments[otherTeam].starting;
+          state.onlineDeploymentVersion=snapshot.deploymentVersion;
+        }
+        state.match={...state.match,...snapshot,home:awayView?snapshot.away:snapshot.home,away:awayView?snapshot.home:snapshot.away,events:snapshot.events||[],eventTotal:(snapshot.events||[]).length};
+        if(deploymentChanged)renderMatchPlayers();else movePlayers();
+        updateMatchUI();
+        const button=q('[data-action="toggle-match"]');
+        button.innerHTML=state.match.running?'<i data-lucide="pause" aria-hidden="true"></i> 暂停':'<i data-lucide="play" aria-hidden="true"></i> 开始';
+        if(state.match.finished){
+          q('[data-result]').classList.add('is-visible');q('[data-result-title]').textContent=state.match.home>state.match.away?'冠军属于你的球队！':'对手赢下了这场推演';
+          q('[data-result-copy]').textContent=`最终比分 ${state.match.home}—${state.match.away}${state.match.penalty?'（'+state.match.penalty+'）':''}。比赛由房间服务器统一结算。`;button.disabled=true;
+        }
+        if(typeof lucide!=='undefined')lucide.createIcons({attrs:{width:16,height:16}});
+      }
+
+      function setScreen(screen){
+        state.screen=screen;
+        qa('.screen').forEach(el=>el.classList.toggle('is-active',el.dataset.screen===screen));
+        const order=['lobby','draft','tactics','match']; const at=order.indexOf(screen);
+        qa('.step').forEach((el,i)=>{ el.classList.toggle('is-active',i===at); el.classList.toggle('is-done',i<at); });
+        if(screen==='draft') renderDraft();
+        if(screen==='tactics') setupTactics();
+        if(screen==='match') setupMatch();
+      }
+
+      function startRoom(ai=true, roomCode=''){
+        if(!ai&&online){
+          if(roomCode){online.joinRoom(roomCode).then(applyOnlineRoom).catch(err=>alert(err.message||'房间不存在'));return;}
+          buildPool();online.createRoom({pool:state.pool,draftOrder:state.draftOrder}).then(applyOnlineRoom).catch(err=>alert(err.message||'创建房间失败'));return;
+        }
+        state.onlineMode=false;state.onlineTeam='home';
+        state.roomCode=roomCode||uid(); state.opponent=ai?'战术 AI · 专家':'好友 · 模拟已加入';
+        buildPool();
+        q('[data-room-code]').textContent=state.roomCode; q('[data-opponent]').textContent=state.opponent;
+        setScreen('draft');
+      }
+
+      function renderDraft(){
+        const filter=state.poolGroup||'门将', localTeam=state.onlineMode?state.onlineTeam:'home';
+        const team=state.draftOrder[state.pickIndex]; const done=state.pickIndex>=32;
+        q('[data-turn-text]').textContent=done?'选秀完成 · 双方名单已锁定':`第 ${state.pickIndex+1} 签 · 轮到${team==='home'?'主队':'客队'}`;
+        q('[data-pick-count]').textContent=`${state.pickIndex} / 32`;
+        q('[data-home-count]').textContent=state.rosters.home.length; q('[data-away-count]').textContent=state.rosters.away.length;
+        qa('[data-roster-panel]').forEach(panel=>panel.classList.toggle('is-picking',!done&&panel.dataset.rosterPanel===team));
+        q('[data-action="to-tactics"]').disabled=!done;
+        q('[data-action="autodraft"]').disabled=state.onlineMode;
+        const picked=new Set([...state.rosters.home,...state.rosters.away].map(p=>p.id));
+        qa('[data-position-group]').forEach(btn=>{const active=btn.dataset.positionGroup===filter;btn.classList.toggle('btn-primary',active);btn.setAttribute('aria-pressed',String(active));});
+        qa('[data-group-count]').forEach(el=>{el.textContent=state.pool.filter(p=>positionGroups[el.dataset.groupCount].includes(p.pos)).length;});
+        const filtered=state.pool.filter(p=>positionGroups[filter].includes(p.pos));
+        const totalPages=1, visiblePlayers=filtered;
+        q('[data-pool-range]').textContent=`${filter} · 共 ${filtered.length} 人 · 传奇 ${filtered.filter(p=>p.isLegend).length} 人，当前分类全部显示`;
+        q('[data-pool-page]').textContent='全部';
+        q('[data-action="pool-prev"]').disabled=true;
+        q('[data-action="pool-next"]').disabled=true;
+        q('[data-player-pool]').innerHTML=visiblePlayers.map(p=>`
+          <button type="button" class="btn player-tile ${state.selected&&state.selected.id===p.id?'is-selected':''}" data-player-id="${p.id}" ${picked.has(p.id)||team!==localTeam?'disabled':''} aria-label="${p.name}，${p.pos}，能力${p.overall}">
+            <span class="tile-top"><span class="ovr">${p.overall}</span><span><strong>${shortName(p.name)}</strong><span class="tile-position"><br>${p.pos} · ${p.foot}</span></span></span>
+            <span class="tile-foot text-small"><span>${p.tier} · ${p.labels[0]}</span><span>体能 ${p.fitness}</span></span>
+          </button>`).join('');
+        qa('[data-player-id]').forEach(btn=>btn.addEventListener('click',()=>selectPlayer(btn.dataset.playerId)));
+        renderPlayerDetail(); renderRoster();
+      }
+
+      function renderPlayerDetail(){
+        const p=state.selected, box=q('[data-player-detail]');
+        if(!p){ box.innerHTML='<strong>球探报告</strong><p class="text-small muted">请选择球员。</p>'; return; }
+        box.innerHTML=`<div class="section-head"><div><strong>${p.name}</strong><div class="text-small muted">${p.pos} · ${p.foot}</div></div><span class="ovr">${p.overall}</span></div>
+          <div class="attribute-list">${p.attrKeys.map(k=>`<div class="attr-row text-small"><span>${k}</span><span class="bar"><span style="width:${p.attrs[k]}%"></span></span><strong>${p.attrs[k]}</strong></div>`).join('')}</div>
+          <div class="tag-row">${p.labels.map(t=>`<span class="viz-badge">${t}</span>`).join('')}</div>
+          <p class="text-small muted">${p.tier} · 巅峰综合 ${p.overall} · ${p.ratingBasis} · 健康 ${p.fitness}%</p>`;
+      }
+
+      function renderRoster(){
+        const row=(p,i)=>`<div class="roster-line text-small"><span class="pick-no">${i+1}</span><span class="roster-name">${shortName(p.name)} · ${p.pos}</span><strong>${p.overall}</strong></div>`;
+        q('[data-home-roster]').innerHTML=state.rosters.home.length?state.rosters.home.map(row).join(''):'<p class="text-small muted">等待第1签</p>';
+        q('[data-away-roster]').innerHTML=state.rosters.away.length?state.rosters.away.map(row).join(''):'<p class="text-small muted">等待主队选择</p>';
+      }
+
+      function selectPlayer(id){
+        const localTeam=state.onlineMode?state.onlineTeam:'home';
+        if(state.drafting||state.pickIndex>=32||state.draftOrder[state.pickIndex]!==localTeam) return;
+        const p=state.pool.find(x=>x.id===id);if(!p)return;state.selected=p;
+        if(state.onlineMode&&online){online.pick(state.roomCode,p.id);return;}
+        makePick(p,'home');autoAway();
+      }
+      function makePick(player,team){
+        const picked=new Set([...state.rosters.home,...state.rosters.away].map(p=>p.id)); if(picked.has(player.id)) return;
+        state.rosters[team].push(player); state.pickIndex++; renderDraft();
+      }
+      function bestPickFor(team){
+        const picked=new Set([...state.rosters.home,...state.rosters.away].map(p=>p.id));
+        const remain=state.pool.filter(p=>!picked.has(p.id)); const roster=state.rosters[team];
+        const needs={'门将':2,'中后卫':3,'边后卫':3,'中场':4,'边锋':2,'中锋':2};
+        const score=(p)=>{
+          const owned=roster.filter(x=>x.pos===p.pos).length, deficit=Math.max(0,needs[p.pos]-owned);
+          const positionLeft=remain.filter(x=>x.pos===p.pos).length;
+          const scarcity=Math.max(0,8-positionLeft)*.8;
+          const identity=roster.some(x=>x.labels[0]===p.labels[0])?1.5:0;
+          const surplus=Math.max(0,owned-needs[p.pos]+1)*4;
+          return p.overall+deficit*3.2+scarcity+identity-surplus+(p.pos==='门将'&&!roster.some(x=>x.pos==='门将')?13:0);
+        };
+        return [...remain].sort((a,b)=>score(b)-score(a))[0]||remain[0];
+      }
+      function autoAway(){
+        if(state.pickIndex>=32||state.draftOrder[state.pickIndex]!=='away'){ state.drafting=false; renderDraft(); return; }
+        state.drafting=true;
+        setTimeout(()=>{ makePick(bestPickFor('away'),'away'); autoAway(); },180);
+      }
+      function autoDraftAll(){
+        if(state.drafting) return; state.drafting=true;
+        const loop=()=>{
+          if(state.pickIndex>=32){ state.drafting=false; renderDraft(); return; }
+          const team=state.draftOrder[state.pickIndex];
+          const picked=new Set([...state.rosters.home,...state.rosters.away].map(p=>p.id));
+          const remain=state.pool.filter(p=>!picked.has(p.id));
+          const p=bestPickFor(team);
+          makePick(p,team); setTimeout(loop,45);
+        }; loop();
+      }
+
+      const formations={
+        '433':[{x:50,y:91,r:'GK'},{x:18,y:76,r:'LB'},{x:39,y:79,r:'CB'},{x:61,y:79,r:'CB'},{x:82,y:76,r:'RB'},{x:27,y:55,r:'CM'},{x:50,y:62,r:'DM'},{x:73,y:55,r:'CM'},{x:20,y:29,r:'LW'},{x:50,y:19,r:'ST'},{x:80,y:29,r:'RW'}],
+        '4231':[{x:50,y:91,r:'GK'},{x:18,y:76,r:'LB'},{x:39,y:80,r:'CB'},{x:61,y:80,r:'CB'},{x:82,y:76,r:'RB'},{x:38,y:61,r:'DM'},{x:62,y:61,r:'DM'},{x:20,y:38,r:'LW'},{x:50,y:43,r:'AM'},{x:80,y:38,r:'RW'},{x:50,y:18,r:'ST'}],
+        '442':[{x:50,y:91,r:'GK'},{x:18,y:76,r:'LB'},{x:39,y:80,r:'CB'},{x:61,y:80,r:'CB'},{x:82,y:76,r:'RB'},{x:18,y:49,r:'LW'},{x:40,y:56,r:'CM'},{x:60,y:56,r:'CM'},{x:82,y:49,r:'RW'},{x:38,y:20,r:'ST'},{x:62,y:20,r:'ST'}],
+        '4141':[{x:50,y:91,r:'GK'},{x:18,y:76,r:'LB'},{x:39,y:80,r:'CB'},{x:61,y:80,r:'CB'},{x:82,y:76,r:'RB'},{x:50,y:64,r:'DM'},{x:18,y:43,r:'LW'},{x:40,y:48,r:'CM'},{x:60,y:48,r:'CM'},{x:82,y:43,r:'RW'},{x:50,y:18,r:'ST'}],
+        '4222':[{x:50,y:91,r:'GK'},{x:18,y:76,r:'LB'},{x:39,y:80,r:'CB'},{x:61,y:80,r:'CB'},{x:82,y:76,r:'RB'},{x:38,y:61,r:'DM'},{x:62,y:61,r:'DM'},{x:34,y:39,r:'AM'},{x:66,y:39,r:'AM'},{x:38,y:18,r:'ST'},{x:62,y:18,r:'ST'}],
+        '352':[{x:50,y:91,r:'GK'},{x:27,y:77,r:'CB'},{x:50,y:81,r:'CB'},{x:73,y:77,r:'CB'},{x:13,y:55,r:'LWB'},{x:37,y:59,r:'CM'},{x:50,y:46,r:'AM'},{x:63,y:59,r:'CM'},{x:87,y:55,r:'RWB'},{x:37,y:20,r:'ST'},{x:63,y:20,r:'ST'}],
+        '343':[{x:50,y:91,r:'GK'},{x:27,y:78,r:'CB'},{x:50,y:82,r:'CB'},{x:73,y:78,r:'CB'},{x:16,y:55,r:'LWB'},{x:40,y:59,r:'CM'},{x:60,y:59,r:'CM'},{x:84,y:55,r:'RWB'},{x:20,y:27,r:'LW'},{x:50,y:18,r:'ST'},{x:80,y:27,r:'RW'}],
+        '532':[{x:50,y:91,r:'GK'},{x:13,y:72,r:'LWB'},{x:30,y:80,r:'CB'},{x:50,y:82,r:'CB'},{x:70,y:80,r:'CB'},{x:87,y:72,r:'RWB'},{x:32,y:51,r:'CM'},{x:50,y:58,r:'DM'},{x:68,y:51,r:'CM'},{x:38,y:20,r:'ST'},{x:62,y:20,r:'ST'}]
+      };
+      const homePitchSlots=(formation)=>formations[formation].map(s=>({...s,x:100-s.y,y:s.x}));
+      const awayPitchSlots=(formation)=>formations[formation].map(s=>({...s,x:s.y,y:100-s.x}));
+      const positionPriority={GK:['门将'],CB:['中后卫'],LB:['边后卫'],RB:['边后卫'],LWB:['边后卫','边锋'],RWB:['边后卫','边锋'],DM:['中场','中后卫'],CM:['中场'],AM:['中场','边锋'],LW:['边锋','中场'],RW:['边锋','中场'],ST:['中锋','边锋']};
+      const roleFamily={GK:'门将',CB:'中后卫',LB:'边后卫',RB:'边后卫',LWB:'边后卫',RWB:'边后卫',DM:'中场',CM:'中场',AM:'中场',LW:'边锋',RW:'边锋',ST:'中锋'};
+      const adjacentPositions={
+        '中后卫':['边后卫','中场'],
+        '边后卫':['中后卫','边锋','中场'],
+        '中场':['中后卫','边后卫','边锋','中锋'],
+        '边锋':['中场','边后卫','中锋'],
+        '中锋':['边锋','中场']
+      };
+      function positionFit(player,role){
+        if(!player||!role)return 100;
+        const target=roleFamily[role];
+        if(!target)return 100;
+        if(target==='门将')return player.pos==='门将'?100:18;
+        if(player.pos==='门将')return 22;
+        if(player.pos===target)return 100;
+        if((positionPriority[role]||[]).includes(player.pos))return 88;
+        if((adjacentPositions[target]||[]).includes(player.pos))return 72;
+        return 56;
+      }
+      function effectiveOverall(player,role=player&&player.role){
+        if(!player)return 0;
+        const fit=positionFit(player,role);
+        return clamp(player.overall-Math.round((100-fit)*.32),35,99);
+      }
+      function effectiveAttr(player,key,role=player&&player.role){
+        if(!player||player.attrs[key]===undefined)return 0;
+        const fit=positionFit(player,role);
+        return clamp(Math.round(player.attrs[key]*(.58+fit*.0042)),20,99);
+      }
+      function teamEffectivePower(list){
+        const active=(list||[]).filter(Boolean);
+        return active.length?active.reduce((sum,p)=>sum+effectiveOverall(p,p.role),0)/active.length:0;
+      }
+      function preferredPlayer(roster,used,role){
+        return roster.filter(x=>!used.has(x.id)).sort((a,b)=>effectiveOverall(b,role)-effectiveOverall(a,role))[0];
+      }
+      function arrangeRoster(){
+        const roster=[...state.rosters.home], used=new Set(), starters=[];
+        formations[state.formation].forEach(slot=>{
+          const p=preferredPlayer(roster,used,slot.r);
+          if(p){used.add(p.id); starters.push({...p,role:slot.r});}
+        });
+        state.starting=starters; state.bench=roster.filter(p=>!used.has(p.id));
+      }
+      function setupTactics(){
+        state.draggedPlayerId=null;state.selectedStarter=null;
+        state.starting=Array(11).fill(null);state.bench=[...state.rosters[state.onlineMode?state.onlineTeam:'home']];
+        q('[data-formation]').value=state.formation;renderTactics();
+      }
+      function changePreMatchFormation(formation){
+        state.formation=formation;
+        state.starting=formations[formation].map((slot,i)=>state.starting[i]?{...state.starting[i],role:slot.r}:null);
+        state.selectedStarter=null;renderTactics();
+      }
+      function renderTactics(){
+        const slots=formations[state.formation];
+        const configured=state.starting.filter(Boolean).length;
+        const squad=[...state.starting.filter(Boolean).map(p=>({...p,isStarter:true})),...state.bench.map(p=>({...p,isStarter:false}))];
+        q('[data-squad-list]').innerHTML=squad.map(p=>`<button type="button" draggable="true" class="btn squad-player ${state.draggedPlayerId===p.id?'is-selected':''}" data-drag-player="${p.id}" aria-label="拖拽 ${p.name}，能力 ${p.overall}">
+          <span class="squad-overall">${p.isStarter?effectiveOverall(p,p.role):p.overall}</span><span class="squad-player-name"><strong>${p.name}</strong><br><span class="text-small muted">${p.pos}${p.isStarter?` → ${p.role} · 适应${positionFit(p,p.role)}%`:''} · ${p.pos==='门将'?`反应${p.isStarter?effectiveAttr(p,'反应',p.role):p.attrs['反应']} · 长传${p.isStarter?effectiveAttr(p,'长传',p.role):p.attrs['长传']}`:`速度${p.isStarter?effectiveAttr(p,'速度',p.role):p.attrs['速度']} · 传球${p.isStarter?effectiveAttr(p,'传球',p.role):p.attrs['传球']}`}</span></span><span class="squad-state text-small">${p.isStarter?'首发':'替补'}</span>
+        </button>`).join('');
+        q('[data-tactic-pitch]').innerHTML=slots.map((slot,i)=>{const p=state.starting[i];return p
+          ?`<button type="button" class="formation-player btn btn-ghost ${state.selectedStarter===i?'is-selected':''}" data-starter="${i}" data-drop-slot="${i}" style="left:${slot.x}%;top:${slot.y}%" aria-label="${p.name}，${slot.r}，位置适应 ${positionFit(p,slot.r)}%"><span class="player-disc">${effectiveOverall(p,slot.r)}</span><span class="player-label text-small"><strong>${p.name}</strong><span class="player-role">${slot.r} · 适应${positionFit(p,slot.r)}%</span></span></button>`
+          :`<button type="button" class="formation-player btn btn-ghost is-empty ${state.selectedStarter===i?'is-selected':''}" data-drop-slot="${i}" style="left:${slot.x}%;top:${slot.y}%" aria-label="${slot.r}位置尚未配置"><span class="player-disc">+</span><span class="player-label text-small">待配置<span class="player-role">${slot.r}</span></span></button>`;}).join('');
+        q('[data-bench]').innerHTML=state.bench.map((p,i)=>`<button type="button" class="btn bench-player" data-bench-index="${i}"><span>${p.overall}</span><span>${shortName(p.name)}</span><span class="text-small muted">${p.pos}</span></button>`).join('');
+        qa('[data-drag-player]').forEach(b=>{
+          b.addEventListener('dragstart',(e)=>{state.draggedPlayerId=b.dataset.dragPlayer;e.dataTransfer.setData('text/plain',b.dataset.dragPlayer);e.dataTransfer.effectAllowed='move';});
+          b.addEventListener('click',()=>{state.draggedPlayerId=b.dataset.dragPlayer;state.selectedStarter=null;renderTactics();});
+        });
+        qa('[data-drop-slot]').forEach(b=>{
+          b.addEventListener('dragover',(e)=>{e.preventDefault();e.dataTransfer.dropEffect='move';});
+          b.addEventListener('drop',(e)=>{e.preventDefault();placePlayerAtSlot(e.dataTransfer.getData('text/plain')||state.draggedPlayerId,Number(b.dataset.dropSlot));});
+          b.addEventListener('click',()=>{const slot=Number(b.dataset.dropSlot);if(state.draggedPlayerId)placePlayerAtSlot(state.draggedPlayerId,slot);else{state.selectedStarter=slot;renderTactics();}});
+        });
+        const active=state.starting.filter(Boolean), power=configured?Math.round(teamEffectivePower(active)):0;
+        q('[data-team-power]').textContent=configured?`战力 ${power}`:'战力 --';
+        q('[data-lineup-count]').textContent=`首发 ${configured}/11`;
+        const averageFit=configured?Math.round(active.reduce((sum,p)=>sum+positionFit(p,p.role),0)/configured):0;
+        q('[data-adaptation]').textContent=configured?`${averageFit}%`:'待配置';
+        q('[data-chemistry]').textContent=configured===11?`${Math.round(80+Math.min(10,active.filter(p=>p.pos==='中场').length*2))}%`:'待配置';
+        const matchup=(state.tactics.attack==='direct'?8:state.tactics.attack==='wide'?5:3)+(state.tactics.focus==='right'?2:0);
+        q('[data-matchup]').textContent=`+${matchup}`;
+        const startButton=q('[data-action="start-match"]');startButton.disabled=configured<11;startButton.innerHTML=configured===11?'<i data-lucide="play" aria-hidden="true"></i> 确认部署，开始比赛':`<i data-lucide="users" aria-hidden="true"></i> 还需配置 ${11-configured} 人`;
+        renderTradeoffs();
+        if(typeof lucide!=='undefined') lucide.createIcons({attrs:{width:16,height:16}});
+      }
+      function placePlayerAtSlot(playerId,slotIndex){
+        if(!playerId||slotIndex<0||slotIndex>=formations[state.formation].length)return;
+        const starterIndex=state.starting.findIndex(p=>p&&p.id===playerId);
+        const targetRole=formations[state.formation][slotIndex].r, target=state.starting[slotIndex];
+        if(starterIndex>=0){
+          if(starterIndex!==slotIndex){
+            const sourceRole=state.starting[starterIndex].role;
+            const incoming={...state.starting[starterIndex],role:targetRole};
+            const outgoing=target?{...target,role:sourceRole}:null;
+            state.starting[slotIndex]=incoming;state.starting[starterIndex]=outgoing;
+          }
+        }else{
+          const benchIndex=state.bench.findIndex(p=>p.id===playerId);
+          if(benchIndex<0)return;
+          const incoming={...state.bench[benchIndex],role:targetRole};state.bench.splice(benchIndex,1);
+          if(target){const outgoing={...target};delete outgoing.role;state.bench.push(outgoing);}
+          state.starting[slotIndex]=incoming;
+        }
+        state.draggedPlayerId=null;state.selectedStarter=null;renderTactics();
+      }
+      function renderTradeoffs(){
+        const t=state.tactics, rows=[];
+        if(t.press==='high') rows.push(['抢断触发 +18%','体能消耗 +24%，身后风险 +12%']);
+        if(t.press==='mid') rows.push(['防守结构稳定','前场夺回球权较少']);
+        if(t.press==='low') rows.push(['禁区保护 +15%','控球率与反击人数下降']);
+        if(t.attack==='direct') rows.push(['反击速度 +20%','传球失误率 +11%']);
+        if(t.attack==='control') rows.push(['传球稳定 +14%','推进速度下降']);
+        if(t.attack==='wide') rows.push(['边路二打一 +16%','中路反击保护 -10%']);
+        if(t.line==='high') rows.push(['压缩空间 +13%','被反越位风险 +17%']);
+        if(t.line==='deep') rows.push(['身后空间 -15%','让出禁区前沿']);
+        q('[data-tradeoffs]').innerHTML=rows.map(r=>`<div class="tradeoff text-small"><div class="tradeoff-gain">收益：${r[0]}</div><div class="tradeoff-cost">代价：${r[1]}</div></div>`).join('');
+      }
+
+      function setupMatch(){
+        state.awayStarting=state.onlineMode&&state.onlineMatchSetup?state.onlineMatchSetup.other.starting:arrangeTeam(state.rosters.away,'4231');
+        state.match={minute:0,phase:'常规时间',home:0,away:0,running:false,speed:1,events:[],eventTotal:0,energy:100,morale:72,subs:0,tick:0,finished:false,penalty:'',halfTimeShown:false};
+        state.matchSelectedId=null;
+        q('[data-result]').classList.remove('is-visible');
+        q('[data-action="toggle-match"]').disabled=false;
+        q('[data-action="finish-match"]').disabled=state.onlineMode;
+        q('[data-live-formation]').value=state.formation;
+        q('[data-live-tactic="press"]').value=state.tactics.press; q('[data-live-tactic="attack"]').value=state.tactics.attack; q('[data-live-tactic="focus"]').value=state.tactics.focus;
+        renderMatchPlayers(); addEvent('0’','双方球员进入场地，主队采用 '+formationName(state.formation)+'，客队采用 4-2-3-1。你可以直接拖拽战术板调整位置，并从替补席完成指定换人。',false,'','开场');
+        updateMatchUI();
+      }
+      function formationName(f){return {'433':'4-3-3','4231':'4-2-3-1','442':'4-4-2','4141':'4-1-4-1','4222':'4-2-2-2','352':'3-5-2','343':'3-4-3','532':'5-3-2'}[f];}
+      function arrangeTeam(roster,formation){
+        const copy=[...roster],used=new Set(),lineup=[];
+        formations[formation].forEach(slot=>{
+          const p=preferredPlayer(copy,used,slot.r);
+          if(p){used.add(p.id);lineup.push({...p,role:slot.r});}
+        });
+        return lineup;
+      }
+      function applyLiveFormation(formation){
+        const current=state.starting.map(p=>({...p})), used=new Set(), next=[];
+        formations[formation].forEach(slot=>{
+          const p=preferredPlayer(current,used,slot.r);
+          if(p){used.add(p.id);next.push({...p,role:slot.r});}
+        });
+        state.formation=formation;state.starting=next;state.matchSelectedId=null;
+        renderMatchPlayers();updateMatchUI();
+      }
+      function renderMatchPlayers(){
+        const pitch=q('[data-match-pitch]'); qa('.match-disc').forEach(e=>e.remove());
+        const homeSlots=homePitchSlots(state.formation), awaySlots=awayPitchSlots('4231');
+        state.starting.forEach((p,i)=>pitch.insertAdjacentHTML('beforeend',`<button type="button" draggable="true" class="match-disc home ${state.matchSelectedId===p.id?'is-selected':''}" data-disc="h${i}" data-match-player="${p.id}" data-match-slot="${i}" style="left:${homeSlots[i].x}%;top:${homeSlots[i].y}%" aria-label="${p.name}，${p.role}，位置适应 ${positionFit(p,p.role)}%，拖拽可调整位置"><span>${effectiveOverall(p,p.role)}</span><span class="disc-label text-small">${p.name}</span></button>`));
+        const away=state.awayStarting;
+        away.forEach((p,i)=>pitch.insertAdjacentHTML('beforeend',`<span class="match-disc away" data-disc="a${i}" style="left:${awaySlots[i].x}%;top:${awaySlots[i].y}%"><span>${effectiveOverall(p,p.role)}</span><span class="disc-label text-small">${shortName(p.name)}</span></span>`));
+        renderMatchHomeBoard();
+        qa('[data-match-player]').forEach(el=>{
+          el.addEventListener('dragstart',(e)=>{state.matchSelectedId=el.dataset.matchPlayer;e.dataTransfer.setData('text/plain',el.dataset.matchPlayer);e.dataTransfer.effectAllowed='move';});
+          el.addEventListener('dragover',(e)=>{e.preventDefault();el.classList.add('is-drop-target');});
+          el.addEventListener('dragleave',()=>el.classList.remove('is-drop-target'));
+          el.addEventListener('drop',(e)=>{e.preventDefault();el.classList.remove('is-drop-target');matchPlacePlayerAtSlot(e.dataTransfer.getData('text/plain')||state.matchSelectedId,Number(el.dataset.matchSlot));});
+          el.addEventListener('click',()=>{if(state.matchSelectedId&&state.matchSelectedId!==el.dataset.matchPlayer)matchPlacePlayerAtSlot(state.matchSelectedId,Number(el.dataset.matchSlot));else{state.matchSelectedId=el.dataset.matchPlayer;renderMatchPlayers();}});
+        });
+        renderMatchBench();
+        movePlayers();
+      }
+      function renderMatchHomeBoard(){
+        const board=q('[data-match-home-board]'), slots=formations[state.formation];
+        board.innerHTML=state.starting.map((p,i)=>`<button type="button" draggable="true" class="formation-player btn btn-ghost ${state.matchSelectedId===p.id?'is-selected':''}" data-match-player="${p.id}" data-match-slot="${i}" style="left:${slots[i].x}%;top:${slots[i].y}%" aria-label="${p.name}，${p.role}，位置适应 ${positionFit(p,p.role)}%，可拖拽调整位置或替换"><span class="player-disc">${effectiveOverall(p,p.role)}</span><span class="player-label text-small"><strong>${p.name}</strong><span class="player-role">${p.role} · ${positionFit(p,p.role)}%</span></span></button>`).join('');
+      }
+      function renderMatchBench(){
+        const box=q('[data-match-bench]');
+        box.innerHTML=state.bench.map(p=>`<button type="button" draggable="true" class="btn match-bench-player ${state.matchSelectedId===p.id?'is-selected':''}" data-match-bench-player="${p.id}" aria-pressed="${state.matchSelectedId===p.id}"><strong>${p.name}</strong><span class="text-small muted">${p.pos} · ${p.overall}</span></button>`).join('');
+        qa('[data-match-bench-player]').forEach(el=>{
+          el.addEventListener('dragstart',(e)=>{state.matchSelectedId=el.dataset.matchBenchPlayer;e.dataTransfer.setData('text/plain',el.dataset.matchBenchPlayer);e.dataTransfer.effectAllowed='move';});
+          el.addEventListener('click',()=>{state.matchSelectedId=el.dataset.matchBenchPlayer;renderMatchPlayers();});
+        });
+        q('[data-subs-count]').textContent=`${state.match.subs}/5 换人`;
+      }
+      function matchPlacePlayerAtSlot(playerId,slotIndex){
+        if(!playerId||!state.starting[slotIndex]||state.match.finished)return;
+        const starterIndex=state.starting.findIndex(p=>p.id===playerId);
+        const targetRole=state.starting[slotIndex].role;
+        if(starterIndex>=0){
+          if(starterIndex!==slotIndex){
+            const sourceRole=state.starting[starterIndex].role;
+            const moving=state.starting[starterIndex], target=state.starting[slotIndex];
+            state.starting[slotIndex]={...moving,role:targetRole};
+            state.starting[starterIndex]={...target,role:sourceRole};
+          }
+          addEvent(`${Math.floor(state.match.minute)}’`,`主队在战术板上互换两个位置，新的对位关系立即生效。`,true,'位置适应性与局部人数优势已重新计算。','位置调整');
+        }else{
+          const benchIndex=state.bench.findIndex(p=>p.id===playerId);
+          if(benchIndex<0)return;
+          if(state.match.subs>=5){addEvent(`${Math.floor(state.match.minute)}’`,`主队已用满5个换人名额，本次拖拽未执行。`,true,'','换人限制');state.matchSelectedId=null;renderMatchPlayers();return;}
+          const incoming=state.bench[benchIndex], outgoing=state.starting[slotIndex];
+          state.starting[slotIndex]={...incoming,role:targetRole};
+          const benched={...outgoing};delete benched.role;state.bench[benchIndex]=benched;
+          state.match.subs++;state.match.energy=clamp(state.match.energy+4,20,100);
+          addEvent(`${Math.floor(state.match.minute)}’`,`主队指定换人：${incoming.name}替换${outgoing.name}，直接接管${targetRole}位置。`,true,'新鲜体能提高该区域覆盖，但默契需要重新建立。','换人');
+        }
+        state.matchSelectedId=null;renderMatchPlayers();updateMatchUI();
+        if(state.onlineMode&&online)online.command(state.roomCode,{type:'lineup',deployment:{starting:state.starting,bench:state.bench,formation:state.formation,tactics:state.tactics}});
+      }
+      function movePlayers(){
+        const m=state.match, homeSlots=homePitchSlots(state.formation), awaySlots=awayPitchSlots('4231');
+        const possession=Math.sin(m.tick*.7)>-0.12?'home':'away';
+        qa('.match-disc').forEach((d)=>{
+          const isHome=d.dataset.disc[0]==='h', idx=Number(d.dataset.disc.slice(1)), base=isHome?homeSlots[idx]:awaySlots[idx];
+          if(!base) return;
+          const attackShift=(possession===(isHome?'home':'away')?8:-4)*(isHome?1:-1);
+          const wideShift=m.tacticsWide?(base.y<50?-4:4):0;
+          const x=clamp(base.x+attackShift+Math.sin(m.tick*.53+idx)*4,7,93);
+          const y=clamp(base.y+wideShift+Math.cos(m.tick*.41+idx)*5,7,93);
+          d.style.left=x+'%';d.style.top=y+'%';
+        });
+        const ball=q('[data-ball]'); const owner=possession==='home'?q(`[data-disc="h${(m.tick%10)+1}"]`):q(`[data-disc="a${(m.tick%10)+1}"]`);
+        if(owner){ball.style.left=owner.style.left;ball.style.top=owner.style.top;}
+      }
+      function toggleMatch(){
+        if(state.onlineMode&&online){online.command(state.roomCode,{type:'toggle'});return;}
+        if(state.match.finished) return; state.match.running=!state.match.running;
+        const b=q('[data-action="toggle-match"]'); b.innerHTML=state.match.running?'<i data-lucide="pause" aria-hidden="true"></i> 暂停':'<i data-lucide="play" aria-hidden="true"></i> 继续';
+        if(typeof lucide!=='undefined') lucide.createIcons({attrs:{width:16,height:16}});
+      }
+      function simulationTick(){
+        if(state.onlineMode)return;
+        const m=state.match; if(!m.running||m.finished) return;
+        m.tick++; const speed=Number(q('[data-speed]').value||1); m.speed=speed;
+        m.minute+=0.1875*speed;
+        const drain=(state.tactics.press==='high'?0.115:state.tactics.press==='low'?0.055:0.078)*speed;
+        m.energy=clamp(m.energy-drain,24,100);
+        movePlayers();
+        const whole=Math.floor(m.minute);
+        if(m.phase==='常规时间'&&!m.halfTimeShown&&m.minute>=45){m.halfTimeShown=true;addEvent('45’',`半场结束前双方仍在高强度对抗。当前比分 ${m.home}—${m.away}，体能与阵型调整将决定下半场走势。`,true,'','半场节点');}
+        if(m.tick%(speed===16?2:Math.max(2,Math.round(8/speed)))===0) maybeEvent(whole);
+        if(m.phase==='常规时间'&&m.minute>=90){
+          m.minute=90;
+          if(m.home===m.away){m.phase='加时赛';m.minute=90;addEvent('90’','常规时间战平，比赛进入加时赛。',true);}
+          else finishMatch();
+        } else if(m.phase==='加时赛'&&m.minute>=120){
+          m.minute=120;
+          if(m.home===m.away) runPenalties(); else finishMatch();
+        }
+        updateMatchUI();
+      }
+      function maybeEvent(minute){
+        const m=state.match;
+        const homePower=teamEffectivePower(state.starting), awayPower=teamEffectivePower(state.awayStarting);
+        const homeAttack=(hash('side'+minute+m.tick+state.roomCode)%100)<clamp(50+(homePower-awayPower)*.72+(m.morale-70)*.35,36,66);
+        const side=homeAttack?'主队':'客队', opponent=homeAttack?'客队':'主队';
+        const lineup=homeAttack?state.starting:state.awayStarting;
+        const otherLineup=homeAttack?state.awayStarting:state.starting;
+        const attacker=lineup.find(p=>['LW','RW','ST'].includes(p.role))||lineup[8]||lineup[0];
+        const creator=lineup.find(p=>['CM','AM','DM'].includes(p.role))||lineup[5]||lineup[0];
+        const defender=otherLineup.find(p=>['CB','LB','RB','LWB','RWB'].includes(p.role))||otherLineup[2]||otherLineup[0];
+        const keeper=otherLineup.find(p=>p.role==='GK')||otherLineup[0];
+        const typeRoll=hash('type'+minute+m.tick+state.roomCode)%100;
+        const late=minute>=75?'最后阶段，':minute>=45?'下半场，':'';
+        if(typeRoll<18){
+          addEvent(`${minute}’`,`${late}${side}耐心连续传递，${creator.name}突然加速送出纵向球，${attacker.name}已经从肋部启动。`,false,'','组织推进');
+        }else if(typeRoll<36){
+          const attackingPower=teamEffectivePower(lineup), defendingPower=teamEffectivePower(otherLineup);
+          const attackFit=positionFit(attacker,attacker.role), keeperFit=positionFit(keeper,keeper.role);
+          const goalChance=clamp(12+(state.tactics.attack==='direct'&&homeAttack?5:0)+(minute>=75?4:0)+(attackingPower-defendingPower)*.65+(attackFit-keeperFit)*.08,5,28);
+          if((hash('goal'+minute+m.tick+state.roomCode)%100)<goalChance){if(homeAttack)m.home++;else m.away++;goalReason(homeAttack,minute);}
+          else addEvent(`${minute}’`,`${attacker.name}在禁区前沿获得半步空间起脚！皮球擦着${keeper.name}把守的立柱偏出，看台一片惊呼。`,false,'','威胁射门');
+        }else if(typeRoll<50){
+          addEvent(`${minute}’`,`${creator.name}送出穿透直塞，${attacker.name}近距离推射；${keeper.name}倒地用腿将球挡出，完成关键扑救！`,true,'门将反应与站位化解了高质量机会。','神勇扑救');
+        }else if(typeRoll<63){
+          addEvent(`${minute}’`,`${side}丢球后立即反抢，${defender.name}强硬卡住线路。双方在中场连续三次对脚，攻防节奏明显加快。`,false,'','激烈对抗');
+        }else if(typeRoll<75){
+          addEvent(`${minute}’`,`${side}赢得前场定位球。${creator.name}将球旋向后点，${defender.name}抢在包抄球员之前头球解围。`,false,'','定位球');
+        }else if(typeRoll<86){
+          addEvent(`${minute}’`,`${opponent}边后卫压得过深，${side}断球后形成三打三。${attacker.name}高速推进，但最后的横传被回追球员破坏。`,false,'','快速反击');
+        }else if(typeRoll<94){
+          const message=minute>=80?`${side}全面压上，禁区内已经堆积五名进攻球员，${opponent}全线退守。比赛进入窒息般的最后争夺！`:`${side}主教练在场边不断示意阵型前移，局部人数优势正从中路转向边路。`;
+          addEvent(`${minute}’`,message,true,'','战术博弈');
+        }else{
+          addEvent(`${minute}’`,`${defender.name}战术犯规阻止突破，裁判鸣哨并口头警告。${side}获得重新组织进攻的机会。`,false,'','犯规中断');
+        }
+      }
+      function goalReason(home,minute){
+        const m=state.match;
+        const reasons=home?[
+          ['对方右后卫前插，身后出现18米纵深空间；你的快速边锋先于补位中卫启动，反击形成单刀。','战术克制 38% · 速度对位 31% · 体力差 19% · 可控随机 12%'],
+          ['高位压迫迫使对方门将仓促出球；主队在禁区前沿形成3对2，二次进攻完成破门。','局部人数 35% · 压迫指令 29% · 球员能力 25% · 可控随机 11%'],
+          ['中场节拍器吸引两人后转移弱侧，边锋与边后卫形成二打一，低平球找到后点。','空间利用 34% · 默契配合 28% · 传球能力 27% · 可控随机 11%']
+        ]:[
+          ['主队防线前压且压迫脱节，客队直塞穿过中场，前锋反越位成功。','防线风险 36% · 体力下降 28% · 前锋速度 24% · 可控随机 12%'],
+          ['主队边路强攻丢失球权，中场保护人数不足；客队三脚传递打穿回防线路。','指令代价 39% · 局部人数 25% · 球员状态 24% · 可控随机 12%']
+        ];
+        const r=reasons[(minute+m.home+m.away)%reasons.length];
+        addEvent(`${minute}’`,`${home?'主队':'客队'}进球！${r[0]}`,true,r[1],'进球');
+        q('[data-reason-box]').innerHTML=`<strong>${home?'主队':'客队'}进球因果链</strong><p>${r[0]}</p><p class="text-small muted">贡献拆解：${r[1]}</p>`;
+      }
+      function addEvent(minute,text,key=false,breakdown='',category='比赛动态'){
+        state.match.eventTotal=(state.match.eventTotal||0)+1;
+        state.match.events.unshift({minute,text,key,breakdown,category}); state.match.events=state.match.events.slice(0,80); renderEvents();
+      }
+      function renderEvents(){
+        const events=state.match.events;
+        const total=state.match.eventTotal||0;
+        q('[data-event-count]').textContent=`累计 ${total} 条`;
+        const feed=q('[data-event-feed]');
+        if(feed.dataset.eventVersion===String(total))return;
+        const pinnedToLatest=feed.scrollTop<8, previousTop=feed.scrollTop, previousHeight=feed.scrollHeight;
+        feed.innerHTML=events.map(e=>`<article class="event-item ${e.key?'is-key':''}"><div class="event-head"><strong class="event-category">${e.key?'●':'○'} ${e.category||'比赛动态'}</strong><span class="event-minute">${e.minute}</span></div><p class="text-small">${e.text}</p>${e.breakdown?`<p class="text-small muted">${e.breakdown}</p>`:''}</article>`).join('');
+        feed.dataset.eventVersion=String(total);
+        if(pinnedToLatest)feed.scrollTop=0;
+        else feed.scrollTop=previousTop+(feed.scrollHeight-previousHeight);
+      }
+      function updateMatchUI(){
+        const m=state.match; q('[data-home-score]').textContent=m.home; q('[data-away-score]').textContent=m.away;
+        q('[data-match-phase]').textContent=m.phase; q('[data-match-clock]').textContent=`${String(Math.floor(m.minute)).padStart(2,'0')}:${String(Math.floor((m.minute%1)*60)).padStart(2,'0')}`;
+        q('[data-momentum]').textContent=`势头 ${m.morale>78?'主队占优':m.morale<64?'客队占优':'均衡'}`;
+        q('[data-home-tactic-summary]').textContent=`主队 · ${formationName(state.formation)} · ${q('[data-live-tactic="press"]').options[q('[data-live-tactic="press"]').selectedIndex].text} · ${q('[data-live-tactic="attack"]').options[q('[data-live-tactic="attack"]').selectedIndex].text}`;
+        const liveCost={high:'高位压迫：抢断触发 +18%，但体能消耗 +24%、身后风险 +12%。',mid:'中位压迫：结构稳定，但前场夺回球权较少。',low:'低位回收：禁区保护 +15%，但控球率与反击人数下降。'};
+        q('[data-live-cost]').textContent=liveCost[state.tactics.press];
+        renderStatus(); renderEvents();
+      }
+      function renderStatus(){
+        const m=state.match;
+        const renderTeam=(list,team)=>list.map((p,i)=>{
+          const isAway=team==='away';
+          const fit=positionFit(p,p.role), liveOverall=effectiveOverall(p,p.role);
+          const energy=clamp(m.energy-((hash(p.name)%9))+((i%3)*2)+(isAway?3:0)-(100-fit)*.07,20,100);
+          const rating=clamp(6.3+(liveOverall-80)*.035+(isAway?(m.away-m.home):(m.home-m.away))*.18+(hash(p.name+m.tick)%8)/10,5.8,9.7).toFixed(1);
+          return `<div class="status-line text-small"><span>${p.name} · ${fit}%</span><strong>${rating}</strong><span>健${p.fitness}</span><span class="energy"><span class="bar"><span style="width:${energy}%"></span></span><span>${Math.round(energy)}</span></span></div>`;
+        }).join('');
+        q('[data-home-status-list]').innerHTML=renderTeam(state.starting,'home');
+        q('[data-away-status-list]').innerHTML=renderTeam(state.awayStarting,'away');
+      }
+      function shout(type){
+        if(state.onlineMode&&online){online.command(state.roomCode,{type:'shout',value:type});return;}
+        if(state.match.finished) return; const m=state.match;
+        const success=(hash(type+m.tick+state.roomCode)%100)<58;
+        if(type==='encourage'){m.morale=clamp(m.morale+(success?7:-2),40,95);addEvent(`${Math.floor(m.minute)}’`,success?'你的鼓励让球员放松下来，传球选择更果断。':'喊话没有明显效果，球队仍按原节奏比赛。',false);}
+        else{m.morale=clamp(m.morale+(success?8:-6),40,95);addEvent(`${Math.floor(m.minute)}’`,success?'你的强硬要求激活了球队，逼抢强度短暂提升。':'施压过度，一名核心球员信心受挫。',false);}
+        updateMatchUI();
+      }
+      function substitute(){
+        const m=state.match; if(m.subs>=5||!state.bench.length||m.finished) return;
+        const idx=(10-m.subs)%state.starting.length, incoming=state.bench.shift(), outgoing=state.starting[idx];
+        state.starting[idx]={...incoming,role:outgoing.role}; state.bench.push(outgoing); m.subs++; m.energy=clamp(m.energy+5,20,100);
+        addEvent(`${Math.floor(m.minute)}’`,`主队换人：${incoming.name}登场，换下${outgoing.name}。新鲜体能提升了对应区域的覆盖。`,true);
+        renderMatchPlayers();updateMatchUI();
+      }
+      function runPenalties(){
+        const m=state.match; const h=3+(hash(state.roomCode)%3), a=3+(hash('away'+state.roomCode)%3); let hh=h,aa=a;
+        if(hh===aa){ if(hash('winner'+state.roomCode)%2)hh++;else aa++; }
+        m.penalty=`点球 ${hh}-${aa}`; addEvent('120’',`加时仍未分胜负，点球大战结束：主队 ${hh}-${aa} 客队。`,true); finishMatch(hh>aa?'home':'away');
+      }
+      function finishMatch(forcedWinner){
+        const m=state.match;
+        if(m.home===m.away&&!forcedWinner){ runPenalties(); return; }
+        m.running=false;m.finished=true;
+        const homeWin=forcedWinner?forcedWinner==='home':m.home>m.away;
+        q('[data-result]').classList.add('is-visible'); q('[data-result-title]').textContent=homeWin?'冠军属于你的球队！':'客队赢下了这场推演';
+        q('[data-result-copy]').textContent=`最终比分 ${m.home}—${m.away}${m.penalty?'（'+m.penalty+'）':''}。共记录 ${m.eventTotal||m.events.length} 条实时战报，可回看每个进球的因果链。`;
+        q('[data-action="toggle-match"]').disabled=true;updateMatchUI();
+      }
+      function skipToResult(){
+        const m=state.match;if(m.finished)return;
+        if(m.home===0&&m.away===0){m.home=2;m.away=1;goalReason(true,34);goalReason(false,58);goalReason(true,81);}
+        m.minute=m.home===m.away?120:90;
+        if(m.home===m.away)runPenalties();else finishMatch();
+      }
+
+      root.addEventListener('click',(e)=>{
+        const b=e.target.closest('[data-action]'); if(!b)return;
+        const a=b.dataset.action;
+        if(a==='create-ai')startRoom(true); if(a==='create-friend')startRoom(false);
+        if(a==='join-room'){const code=q('#join-code').value.trim().toUpperCase();if(code.length===6)startRoom(false,code);}
+        if(a==='copy-room'){navigator.clipboard&&navigator.clipboard.writeText(state.roomCode);b.textContent='已复制';setTimeout(()=>b.textContent='复制房间码',900);}
+        if(a==='pool-prev'){state.poolPage=Math.max(0,state.poolPage-1);renderDraft();}
+        if(a==='pool-next'){state.poolPage++;renderDraft();}
+        if(a==='autodraft')autoDraftAll();
+        if(a==='to-tactics'&&state.pickIndex>=32)setScreen('tactics');
+        if(a==='best-lineup'){arrangeRoster();state.draggedPlayerId=null;state.selectedStarter=null;renderTactics();}
+        if(a==='start-match'&&state.starting.filter(Boolean).length===11){
+          if(state.onlineMode&&online){online.ready(state.roomCode,{starting:state.starting,bench:state.bench,formation:state.formation,tactics:state.tactics});b.disabled=true;b.textContent='等待好友完成部署…';}
+          else setScreen('match');
+        }
+        if(a==='toggle-match')toggleMatch();
+        if(a==='finish-match')skipToResult();
+        if(a==='review'){const goal=state.match.events.find(x=>x.key&&x.breakdown);if(goal)q('[data-reason-box]').scrollIntoView({behavior:'smooth',block:'center'});}
+        if(a==='play-again'){state.match.running=false;setScreen('lobby');}
+      });
+      qa('[data-position-group]').forEach(btn=>btn.addEventListener('click',()=>{state.poolGroup=btn.dataset.positionGroup;state.poolPage=0;state.selected=state.pool.find(p=>positionGroups[state.poolGroup].includes(p.pos))||state.selected;renderDraft();}));
+      q('[data-formation]').addEventListener('change',(e)=>changePreMatchFormation(e.target.value));
+      qa('[data-tactic]').forEach(el=>el.addEventListener('change',()=>{state.tactics[el.dataset.tactic]=el.value;renderTactics();}));
+      qa('[data-live-tactic]').forEach(el=>el.addEventListener('change',()=>{state.tactics[el.dataset.liveTactic]=el.value;state.match.tacticsWide=state.tactics.attack==='wide';addEvent(`${Math.floor(state.match.minute)}’`,`主队临场调整：${el.options[el.selectedIndex].text}。收益与对应风险已进入比赛计算。`,true);if(state.onlineMode&&online)online.command(state.roomCode,{type:'tactic',key:el.dataset.liveTactic,value:el.value});updateMatchUI();}));
+      q('[data-live-formation]').addEventListener('change',(e)=>{applyLiveFormation(e.target.value);addEvent(`${Math.floor(state.match.minute)}’`,`主队直接切换为 ${formationName(state.formation)}，球员按新站位重新分布，可继续拖拽微调。`,true,'阵型宽度、纵深与局部人数关系已重新计算。','即时变阵');if(state.onlineMode&&online){online.command(state.roomCode,{type:'formation',value:state.formation});online.command(state.roomCode,{type:'lineup',deployment:{starting:state.starting,bench:state.bench,formation:state.formation,tactics:state.tactics}});}});
+      qa('[data-shout]').forEach(b=>b.addEventListener('click',()=>shout(b.dataset.shout)));
+      q('[data-speed]').addEventListener('change',(e)=>{state.match.speed=Number(e.target.value);if(state.onlineMode&&online)online.command(state.roomCode,{type:'speed',value:state.match.speed});});
+      if(online)online.init({onRoom:applyOnlineRoom,onMatchReady:handleOnlineMatchReady,onMatchState:applyOnlineMatch,onError:(message)=>alert(message)});
+      setInterval(simulationTick,1000);
+      if(typeof lucide!=='undefined') lucide.createIcons({attrs:{width:16,height:16}});
+    })();
+  </script>
+</div>
+</body>
+</html>
