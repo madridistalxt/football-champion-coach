@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: football-champion-manager
+    runtime: node
+    plan: free
+    buildCommand: node --check server.js
+    startCommand: node server.js
+    healthCheckPath: /health
+    autoDeployTrigger: commit
